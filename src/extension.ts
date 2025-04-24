@@ -1,253 +1,161 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import * as path from 'path';
 
 let zenjiPanel: vscode.WebviewPanel | undefined;
+let statusBarItem: vscode.StatusBarItem;
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('Zenjispace is now active!');
+    statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    statusBarItem.text = "$(zen) Zenji AI";
+    statusBarItem.tooltip = "Open Zenjispace - Your mindful AI coding companion";
+    statusBarItem.command = 'zenjispace.open';
+    statusBarItem.show();
+    context.subscriptions.push(statusBarItem);
 
-    // Check if this is the first run after installation/update
     const isFirstRun = context.globalState.get('zenjiFirstRun', true);
     const onboardingComplete = context.globalState.get('onboardingComplete', false);
-    
+
     if (isFirstRun) {
-        // Mark that first run has occurred
         context.globalState.update('zenjiFirstRun', false);
-        
-        // Open Zenjispace onboarding on first run
-        if (!onboardingComplete) {
-            openZenjiOnboarding(context);
-        } else {
+        if (onboardingComplete) {
             openZenjiDashboard(context);
+        } else {
+            openZenjiOnboarding(context);
         }
     }
 
-    // Register the command to open Zenjispace
-    let openCommand = vscode.commands.registerCommand('zenjispace.open', () => {
-        if (!onboardingComplete) {
-            openZenjiOnboarding(context);
-        } else {
+    context.subscriptions.push(
+        vscode.commands.registerCommand('zenjispace.open', () => {
+            if (context.globalState.get('onboardingComplete', false)) {
+                openZenjiDashboard(context);
+            } else {
+                openZenjiOnboarding(context);
+            }
+        }),
+        vscode.commands.registerCommand('zenjispace.onboarding', () => openZenjiOnboarding(context)),
+        vscode.commands.registerCommand('zenjispace.clearData', async () => {
+            const confirm = await vscode.window.showWarningMessage(
+                'This will clear all Zenjispace user data. This action cannot be undone.',
+                { modal: true },
+                'Clear Data', 'Cancel'
+            );
+            if (confirm === 'Clear Data') {
+                await clearAllData(context);
+                vscode.window.showInformationMessage('Zenjispace data has been cleared successfully.');
+            }
+        }),
+        vscode.commands.registerCommand('zenjispace.forceCompleteOnboarding', async () => {
+            await context.globalState.update('onboardingComplete', true);
             openZenjiDashboard(context);
-        }
-    });
-
-    // Register onboarding command
-    let onboardingCommand = vscode.commands.registerCommand('zenjispace.onboarding', () => {
-        openZenjiOnboarding(context);
-    });
-    
-    // Register clear data command
-    let clearDataCommand = vscode.commands.registerCommand('zenjispace.clearData', async () => {
-        const confirm = await vscode.window.showWarningMessage(
-            'This will clear all Zenjispace user data including preferences, journal entries, and usage statistics. This action cannot be undone.',
-            { modal: true },
-            'Clear Data', 'Cancel'
-        );
-        
-        if (confirm === 'Clear Data') {
-            // Clear all data from state
-            await clearAllData(context);
-            
-            // Show confirmation
-            vscode.window.showInformationMessage('Zenjispace data has been cleared successfully.');
-            
-            // No need to reset panel here as clearAllData already handles that
-        }
-    });
-
-    context.subscriptions.push(openCommand, onboardingCommand, clearDataCommand);
+        })
+    );
 }
 
-// Clear all user data
 async function clearAllData(context: vscode.ExtensionContext) {
-    // Reset important state values
-    await context.globalState.update('onboardingComplete', false);
-    await context.globalState.update('zenjiFirstRun', true);
-    
-    // List of all state keys to clear
     const keysToRemove = [
-        'avatar', 
-        'userName', 
-        'focusStats', 
-        'journalEntries',
-        'chatHistory',
-        'sound',
-        'activeTab',
-        'activeJournalTab'
+        'avatar', 'userName', 'focusStats', 'journalEntries',
+        'chatHistory', 'sound', 'activeTab', 'activeJournalTab'
     ];
-    
-    // Clear each key
     for (const key of keysToRemove) {
         await context.globalState.update(key, undefined);
     }
+    // Make sure to set onboardingComplete to false explicitly
+    await context.globalState.update('onboardingComplete', false);
     
-    // If the panel is open, send a message to clear the webview state too
-    if (zenjiPanel) {
-        zenjiPanel.webview.postMessage({ command: 'clearData' });
-        
-        // Dispose the current panel
-        zenjiPanel.dispose();
-        zenjiPanel = undefined;
-        
-        // Open the onboarding panel after a short delay to ensure clean reset
-        setTimeout(() => {
-            openZenjiOnboarding(context);
-        }, 500);
-    } else {
-        // If there's no panel open, directly open the onboarding
-        openZenjiOnboarding(context);
-    }
+    zenjiPanel?.dispose();
+    openZenjiOnboarding(context);
 }
 
 function openZenjiOnboarding(context: vscode.ExtensionContext) {
-    if (zenjiPanel) {
-        zenjiPanel.dispose();
-    }
-
-    // Create the onboarding panel
-    zenjiPanel = vscode.window.createWebviewPanel(
-        'zenjiOnboarding',
-        'Welcome to Zenjispace',
-        vscode.ViewColumn.One,
-        {
-            enableScripts: true,
-            retainContextWhenHidden: true,
-            localResourceRoots: [
-                vscode.Uri.file(context.extensionPath)
-            ]
-        }
-    );
-
-    // Get paths to the various resource folders
-    const mediaPath = vscode.Uri.file(context.asAbsolutePath('media'));
-    const stylesPath = vscode.Uri.file(context.asAbsolutePath('media/styles'));
-    const scriptsPath = vscode.Uri.file(context.asAbsolutePath('media/scripts'));
-    const assetsPath = vscode.Uri.file(context.asAbsolutePath('media/assets'));
-    
-    // Convert to webview URIs
-    const mediaUri = zenjiPanel.webview.asWebviewUri(mediaPath);
-    const stylesUri = zenjiPanel.webview.asWebviewUri(stylesPath);
-    const scriptsUri = zenjiPanel.webview.asWebviewUri(scriptsPath);
-    const assetsUri = zenjiPanel.webview.asWebviewUri(assetsPath);
-
-    // Load the onboarding HTML template
-    const onboardingTemplatePath = context.asAbsolutePath('media/webviews/onboarding/onboarding.html');
-    let onboardingHtml = fs.readFileSync(onboardingTemplatePath, 'utf8');
-    
-    // Replace template variables
-    onboardingHtml = onboardingHtml
-        .replace(/\{\{mediaUri\}\}/g, mediaUri.toString())
-        .replace(/\{\{stylesUri\}\}/g, stylesUri.toString())
-        .replace(/\{\{scriptsUri\}\}/g, scriptsUri.toString())
-        .replace(/\{\{assetsUri\}\}/g, assetsUri.toString());
-
-    // Set webview content
-    zenjiPanel.webview.html = onboardingHtml;
-
-    // Handle messages from the webview
-    zenjiPanel.webview.onDidReceiveMessage(
-        message => {
-            switch (message.command) {
-                case 'alert':
-                    vscode.window.showInformationMessage(message.text);
-                    return;
-                case 'onboardingComplete':
-                    // Save that onboarding is complete
-                    context.globalState.update('onboardingComplete', true);
-                    // Open the main dashboard
-                    openZenjiDashboard(context);
-                    return;
-            }
-        },
-        undefined,
-        context.subscriptions
-    );
-
-    // Reset when the panel is closed
-    zenjiPanel.onDidDispose(
-        () => {
-            zenjiPanel = undefined;
-        },
-        null,
-        context.subscriptions
-    );
+    zenjiPanel?.dispose();
+    zenjiPanel = createWebviewPanel(context, 'zenjiOnboarding', 'Welcome to Zenjispace', 'media/webviews/onboarding/onboarding.html');
 }
 
 function openZenjiDashboard(context: vscode.ExtensionContext) {
-    // If we already have a panel, show it
-    if (zenjiPanel) {
-        zenjiPanel.reveal(vscode.ViewColumn.One);
-        return;
+    zenjiPanel?.dispose();
+    zenjiPanel = createWebviewPanel(context, 'zenjispace', 'Zenjispace', 'media/webviews/dashboard/dashboard.html');
+}
+
+function createWebviewPanel(context: vscode.ExtensionContext, viewType: string, title: string, templatePath: string): vscode.WebviewPanel {
+    // Only check if we're trying to open the dashboard
+    if (viewType === 'zenjispace') {
+        const isOnboardingComplete = context.globalState.get('onboardingComplete', false);
+        // If onboarding is not complete, redirect to onboarding page
+        if (!isOnboardingComplete) {
+            return createWebviewPanel(context, 'zenjiOnboarding', 'Welcome to Zenjispace', 'media/webviews/onboarding/onboarding.html');
+        }
     }
 
-    // Otherwise, create a new panel
-    zenjiPanel = vscode.window.createWebviewPanel(
-        'zenjispace',
-        'Zenjispace',
-        vscode.ViewColumn.One,
-        {
-            enableScripts: true,
-            retainContextWhenHidden: true,
-            localResourceRoots: [
-                vscode.Uri.file(context.extensionPath)
-            ]
-        }
-    );
+    const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.One, {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+        localResourceRoots: [vscode.Uri.file(context.extensionPath)]
+    });
 
-    // Get paths to the various resource folders
-    const mediaPath = vscode.Uri.file(context.asAbsolutePath('media'));
-    const stylesPath = vscode.Uri.file(context.asAbsolutePath('media/styles'));
-    const scriptsPath = vscode.Uri.file(context.asAbsolutePath('media/scripts'));
-    const assetsPath = vscode.Uri.file(context.asAbsolutePath('media/assets'));
-    
-    // Convert to webview URIs
-    const mediaUri = zenjiPanel.webview.asWebviewUri(mediaPath);
-    const stylesUri = zenjiPanel.webview.asWebviewUri(stylesPath);
-    const scriptsUri = zenjiPanel.webview.asWebviewUri(scriptsPath);
-    const assetsUri = zenjiPanel.webview.asWebviewUri(assetsPath);
-    
-    // Load the dashboard HTML template
-    const dashboardTemplatePath = context.asAbsolutePath('media/webviews/dashboard/dashboard.html');
-    let dashboardHtml = fs.readFileSync(dashboardTemplatePath, 'utf8');
-    
-    // Replace template variables
-    dashboardHtml = dashboardHtml
+    const mediaUri = panel.webview.asWebviewUri(vscode.Uri.file(context.asAbsolutePath('media')));
+    const stylesUri = panel.webview.asWebviewUri(vscode.Uri.file(context.asAbsolutePath('media/styles')));
+    const scriptsUri = panel.webview.asWebviewUri(vscode.Uri.file(context.asAbsolutePath('media/scripts')));
+    const assetsUri = panel.webview.asWebviewUri(vscode.Uri.file(context.asAbsolutePath('media/assets')));
+
+    const template = fs.readFileSync(context.asAbsolutePath(templatePath), 'utf8')
         .replace(/\{\{mediaUri\}\}/g, mediaUri.toString())
         .replace(/\{\{stylesUri\}\}/g, stylesUri.toString())
         .replace(/\{\{scriptsUri\}\}/g, scriptsUri.toString())
         .replace(/\{\{assetsUri\}\}/g, assetsUri.toString());
 
-    // Set webview content
-    zenjiPanel.webview.html = dashboardHtml;
+    panel.webview.html = template;
 
-    // Handle messages from the webview
-    zenjiPanel.webview.onDidReceiveMessage(
+    // Listen for messages from the webview
+    panel.webview.onDidReceiveMessage(
         message => {
-            switch (message.command) {
-                case 'alert':
-                    vscode.window.showInformationMessage(message.text);
+            switch (message.command) { 
+                case 'onboardingComplete':
+                    context.globalState.update('onboardingComplete', true);
+                    if (message.userData && message.userData.userName) {
+                        context.globalState.update('userName', message.userData.userName);
+                    }
+                    if (message.userData && message.userData.avatar) {
+                        context.globalState.update('avatar', message.userData.avatar);
+                    }
+                    openZenjiDashboard(context);
                     return;
+                    
+                case 'updateProfile':
+                    if (message.avatar) {
+                        context.globalState.update('avatar', message.avatar);
+                    }
+                    if (message.userName) {
+                        context.globalState.update('userName', message.userName);
+                    }
+                    return;
+                    
                 case 'executeCommand':
-                    // Execute a VS Code command
                     if (message.commandId) {
                         vscode.commands.executeCommand(message.commandId);
                     }
                     return;
+                
+                case 'getUserData':
+                    // Send stored user data to the webview without additional checks
+                    const userName = context.globalState.get('userName');
+                    const avatar = context.globalState.get('avatar');
+                    
+                    panel.webview.postMessage({
+                        command: 'userData',
+                        userName: userName,
+                        avatar: avatar
+                    });
+                    return;
             }
         },
         undefined,
         context.subscriptions
     );
-    
-    // Reset when the panel is closed
-    zenjiPanel.onDidDispose(
-        () => {
-            zenjiPanel = undefined;
-        },
-        null,
-        context.subscriptions
-    );
+
+    panel.onDidDispose(() => zenjiPanel = undefined, null, context.subscriptions);
+    return panel;
 }
 
-export function deactivate() {}
+export function deactivate() {
+    statusBarItem?.dispose();
+}

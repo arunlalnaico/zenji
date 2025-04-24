@@ -2,7 +2,7 @@
     "name": "zenjispace",
     "displayName": "Zenjispace",
     "description": "A mindful AI coding companion webview for VS Code.",
-    "version": "1.2.1",
+    "version": "1.2.2",
     "engines": {
         "vscode": "^1.60.0"
     },
@@ -31,8 +31,13 @@
         "package": "vsce package",
         "build": "npm run compile && npm run package",
         "uninstall-extension": "code --uninstall-extension zenjispace",
-        "install": "code --install-extension ./zenjispace-1.2.1.vsix",
-        "r": "npm run build && (npm run uninstall-extension || echo Extension not installed) && npm run install"
+        "install": "code --install-extension ./zenjispace-1.2.2.vsix",
+        "restart-vscode": "code --reloadWindow",
+        "reload-extensions": "code --command workbench.action.developer.reloadWindow",
+        "install-and-restart": "npm run install && npm run restart-vscode",
+        "install-and-reload": "npm run install && npm run reload-extensions",
+        "r": "npm run build && (npm run uninstall-extension || echo Extension not installed) && npm run install",
+        "r-reload": "npm run build && (npm run uninstall-extension || echo Extension not installed) && npm run install-and-reload"
     },
     "repository": {
         "type": "git",

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenjispace</title>
+    <link rel="stylesheet" href="{{stylesUri}}/main.css">
+    <link rel="stylesheet" href="{{stylesUri}}/components.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="profile">
+                <div class="avatar-upload">
+                    <div class="avatar">
+                        <img src="{{assetsUri}}/default-avatar.png" alt="User Avatar" id="avatar-preview" />
+                    </div>
+                    <div class="avatar-edit">
+                        <input type="file" id="avatarUpload" accept=".jpg, .jpeg, .png" />
+                        <label for="avatarUpload">📷</label>
+                    </div>
+                </div>
+                <div>
+                    <div class="welcome-message" id="welcome-message">Welcome to Zenjispace</div>
+                    <div class="daily-quote">Remember: small moments of mindfulness create great clarity.</div>
+                </div>
+            </div>
+            <div class="settings-trigger">
+                <button id="settingsButton" class="icon-button">⚙️</button>
+            </div>
+        </header>
+        
+        <!-- Settings Modal -->
+        <div id="settingsModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Settings</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="settings-section">
+                        <h3>Data Management</h3>
+                        <div class="settings-option">
+                            <p>Clear all your Zenjispace user data including preferences, journal entries, and usage statistics.</p>
+                            <button id="clearDataBtn" class="btn btn-danger">Clear All Data</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="ai-assistant-container">
+            <div class="ai-assistant-bg"></div>
+            <div class="ai-assistant">
+                <div class="ai-icon">
+                    <img src="{{assetsUri}}/zenji-logo.svg" alt="Zenji AI" class="zenji-logo" />
+                </div>
+                <div class="ai-message">
+                    <div class="ai-greeting">I'm Zenji, your mindful AI companion.</div>
+                    <div class="ai-suggestion">How can I assist you today? Try the focus timer or a quick breathing session.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-tabs">
+            <div class="main-tab active" data-main-tab="mindfulness">
+                <span class="main-tab-icon">🧘</span>Mindfulness
+            </div>
+            <div class="main-tab" data-main-tab="sounds">
+                <span class="main-tab-icon">🎵</span>Sounds
+            </div>
+            <div class="main-tab" data-main-tab="journal">
+                <span class="main-tab-icon">📓</span>Journal
+            </div>
+            <div class="main-tab" data-main-tab="chat">
+                <span class="main-tab-icon">💬</span>Ask Zenji
+            </div>
+        </div>
+        
+        <main>
+            <!-- Mindfulness tab -->
+            <div id="mindfulness-tab" class="tab-content active">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🧘</div>
+                        <h2>Focus Tools</h2>
+                    </div>
+                    <button id="startFocus" class="btn">Start 25min Focus Session</button>
+                    <button id="startBreak" class="btn btn-secondary">Take a 5min Break</button>
+                    
+                    <div class="breathing-circle">
+                        <span>Breathe</span>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="focusCount">0</div>
+                            <div class="stat-label">Focus Sessions</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="focusMinutes">0</div>
+                            <div class="stat-label">Minutes Focused</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="breakCount">0</div>
+                            <div class="stat-label">Breaks Taken</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="moodAvg">-</div>
+                            <div class="stat-label">Mood Average</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sounds tab -->
+            <div id="sounds-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🎵</div>
+                        <h2>Ambient Sounds</h2>
+                    </div>
+                    <p>Play calming background sounds to help you focus and relax while coding.</p>
+                    
+                    <div class="sounds-container" id="soundsContainer">
+                        <!-- Sounds will be dynamically loaded here -->
+                    </div>
+                    
+                    <!-- Hidden audio player element -->
+                    <audio id="audioPlayer" loop></audio>
+                </div>
+            </div>
+
+            <!-- Journal tab -->
+            <div id="journal-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">📓</div>
+                        <h2>Journal & Insights</h2>
+                    </div>
+                    
+                    <div class="tabs">
+                        <div class="tab active" data-tab="journal">Journal</div>
+                        <div class="tab" data-tab="insights">Weekly Insights</div>
+                    </div>
+                    
+                    <div class="tab-content active" id="journal-content-tab">
+                        <div class="journal-prompt">
+                            <p>Today's prompt: What went well in your coding today?</p>
+                        </div>
+                        
+                        <textarea id="journalEntry" placeholder="Write your thoughts here..." rows="4"></textarea>
+                        <button id="saveJournal" class="btn">Save Entry</button>
+                        
+                        <h3>Recent Entries</h3>
+                        <div class="journal-entries" id="journalEntriesList">
+                            <!-- Journal entries will be dynamically added here -->
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="insights-content-tab">
+                        <!-- Insights will be dynamically generated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat tab -->
+            <div id="chat-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">💬</div>
+                        <h2>Ask Zenji</h2>
+                    </div>
+                    <div class="ai-chat">
+                        <div id="chatMessages"></div>
+                        <div id="typingIndicator" class="typing-indicator" style="display: none;">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                        <div class="chat-input">
+                            <input type="text" id="chatInput" placeholder="Ask anything about mindfulness or wellness..." />
+                            <button id="sendChat" class="btn">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Core scripts -->
+    <script src="{{scriptsUri}}/zenji-core.js"></script>
+    <script src="{{scriptsUri}}/zenji-tabs.js"></script>
+    <script src="{{scriptsUri}}/zenji-focus.js"></script>
+    <script src="{{scriptsUri}}/zenji-sounds.js"></script>
+    <script src="{{scriptsUri}}/zenji-journal.js"></script>
+    <script src="{{scriptsUri}}/zenji-chat.js"></script>
+    <script>
+        // Settings modal functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            const settingsModal = document.getElementById('settingsModal');
+            const settingsButton = document.getElementById('settingsButton');
+            const closeBtn = document.querySelector('.close');
+            const clearDataBtn = document.getElementById('clearDataBtn');
+            const welcomeMessage = document.getElementById('welcome-message');
+            
+            // Set personalized welcome message if user name exists
+            const state = loadState();
+            if (state.userName) {
+                welcomeMessage.textContent = `Welcome back, ${state.userName}`;
+            }
+            
+            // Open settings modal
+            settingsButton.addEventListener('click', () => {
+                settingsModal.style.display = 'block';
+            });
+            
+            // Close settings modal
+            closeBtn.addEventListener('click', () => {
+                settingsModal.style.display = 'none';
+            });
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', (event) => {
+                if (event.target === settingsModal) {
+                    settingsModal.style.display = 'none';
+                }
+            });
+            
+            // Clear data button
+            clearDataBtn.addEventListener('click', () => {
+                if (confirm('Are you sure you want to clear all your Zenjispace data? This action cannot be undone.')) {
+                    // Send message to extension to clear data
+                    sendMessage('executeCommand', { commandId: 'zenjispace.clearData' });
+                    settingsModal.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

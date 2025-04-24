@@ -12,6 +12,12 @@ Creating an AI Mindful Assistant as a VS Code extension is an awesome idea—esp
 
 2. Time to Stand Reminder  
    Subtle prompts to stand up and stretch during long coding sessions.
+   
+   - Uses ZenNotify component from design templates to display unobtrusive notifications
+   - Customizable intervals (30, 45, 60, 90 minutes)
+   - Animation showing simple stretch exercises from ZenAnimation library
+   - Optional dismissible or auto-hide notifications
+   - Tracks standing breaks in ZenStats component for wellness insights
 
 3. Mood Check-ins  
    Periodic mood check pop-ups (emoji sliders or 1–5 scale).  
@@ -60,6 +66,36 @@ Creating an AI Mindful Assistant as a VS Code extension is an awesome idea—esp
 Everything stored locally or with optional encrypted cloud sync (if ever needed).  
 
 - Full opt-in and customization for all features.
+
+### 🌱 Onboarding Experience
+A thoughtful first-run experience to welcome users to Zenji:
+
+#### Onboarding UI Flow
+- Clean, minimal welcome screen with Zenji logo and tagline
+- Progressive disclosure approach (step-by-step screens)
+- Uses ZenOnboard component from design templates for consistent styling
+- Animated transitions between screens for a calming first impression
+
+#### Personalization Setup
+- Username input with gentle validation
+- Avatar upload using ZenImageUpload component
+  - Drag-and-drop support
+  - Image cropping/resizing tools
+  - Default avatar options with mindfulness themes
+- Optional wellness goals selection
+- Preferences for notification frequency and mindfulness reminders
+
+#### ZenjiSpace Dashboard
+After completing onboarding, users access their personal ZenjiSpace:
+- Personalized greeting with username and avatar display
+- Daily mindfulness quote or tip
+- Quick-access widgets for most-used features
+- Activity timeline showing recent meditation sessions, breaks, and milestones
+- Customizable dashboard layout using ZenGrid component
+- Mindfulness stats visualization with progress toward personal goals
+- Direct access to all core Zenji features (breathing exercises, timers, journaling)
+
+The dashboard serves as the central hub for the user's mindfulness journey, providing both functionality and visual encouragement to maintain healthy coding habits.
 
 ### 🧘 Mindful Coding Interface  
 - Warm, personalized greetings like: *"Welcome back, Arun. Let's breathe and build."*  
@@ -143,7 +179,7 @@ Detects code frustration patterns (e.g., frequent undo, rapid typing, debug loop
 
 | Part              | Tech                          |
 |-------------------|-------------------------------|
-| WebView UI        | HTML/CSS/JS (React + Tailwind preferred) |
+| WebView UI        | HTML/CSS/JS (Tailwind preferred) |
 | AI Backend        | OpenAI API (chat + embeddings optional) |
 | Extension Core    | Node.js + VS Code Extension API |
 | Local Storage     | `vscode.workspaceState` or file-based |

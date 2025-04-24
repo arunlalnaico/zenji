@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{{stylesUri}}/components.css">
 </head>
 <body>
-    <div class="container">
+    <div class="container" id="dashboard-container">
         <header>
             <div class="profile">
                 <div class="avatar-upload">
@@ -21,7 +21,7 @@
                     </div>
                 </div>
                 <div>
-                    <div class="welcome-message">Welcome to Zenjispace</div>
+                    <div class="welcome-message" id="welcome-message">Welcome to Zenjispace</div>
                     <div class="daily-quote">Remember: small moments of mindfulness create great clarity.</div>
                 </div>
             </div>
@@ -188,44 +188,28 @@
         </main>
     </div>
     
-    <!-- Core scripts -->
     <script src="{{scriptsUri}}/zenji-core.js"></script>
-    <script src="{{scriptsUri}}/zenji-tabs.js"></script>
-    <script src="{{scriptsUri}}/zenji-focus.js"></script>
-    <script src="{{scriptsUri}}/zenji-sounds.js"></script>
-    <script src="{{scriptsUri}}/zenji-journal.js"></script>
-    <script src="{{scriptsUri}}/zenji-chat.js"></script>
     <script>
-        // Settings modal functionality
+        // Initialize the dashboard with user data
         document.addEventListener('DOMContentLoaded', () => {
-            const settingsModal = document.getElementById('settingsModal');
-            const settingsButton = document.getElementById('settingsButton');
-            const closeBtn = document.querySelector('.close');
-            const clearDataBtn = document.getElementById('clearDataBtn');
+            const vscode = acquireVsCodeApi();
             
-            // Open settings modal
-            settingsButton.addEventListener('click', () => {
-                settingsModal.style.display = 'block';
-            });
+            // Simply request user data from extension
+            vscode.postMessage({ command: 'getUserData' });
             
-            // Close settings modal
-            closeBtn.addEventListener('click', () => {
-                settingsModal.style.display = 'none';
-            });
-            
-            // Close modal when clicking outside
-            window.addEventListener('click', (event) => {
-                if (event.target === settingsModal) {
-                    settingsModal.style.display = 'none';
-                }
-            });
-            
-            // Clear data button
-            clearDataBtn.addEventListener('click', () => {
-                if (confirm('Are you sure you want to clear all your Zenjispace data? This action cannot be undone.')) {
-                    // Send message to extension to clear data
-                    sendMessage('executeCommand', { commandId: 'zenjispace.clearData' });
-                    settingsModal.style.display = 'none';
+            // Listen for messages from the extension
+            window.addEventListener('message', event => {
+                const message = event.data;
+                
+                if (message.command === 'userData') {
+                    // Update avatar and name if available
+                    if (message.avatar) {
+                        document.getElementById('avatar-preview').src = message.avatar;
+                    }
+                    
+                    if (message.userName) {
+                        document.getElementById('welcome-message').textContent = `Welcome back, ${message.userName}`;
+                    }
                 }
             });
         });

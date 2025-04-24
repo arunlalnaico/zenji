@@ -6,109 +6,6 @@
     <title>Welcome to Zenji</title>
     <link rel="stylesheet" href="{{stylesUri}}/main.css">
     <link rel="stylesheet" href="{{stylesUri}}/components.css">
-    <style>
-        /* Onboarding specific styles */
-        .welcome-header {
-            text-align: center;
-            margin-bottom: 40px;
-            animation: fadeIn 0.6s ease-out;
-        }
-        
-        .tagline {
-            font-size: 1.2em;
-            opacity: 0.8;
-            margin-top: 5px;
-        }
-        
-        .onboarding-card {
-            max-width: 600px;
-            margin: 40px auto;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-            background-color: var(--card-bg);
-            border: 1px solid var(--card-border);
-            animation: fadeIn 0.7s ease-out;
-        }
-        
-        .step-indicator {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 30px;
-        }
-        
-        .step {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background-color: rgba(106, 115, 193, 0.2);
-            margin: 0 8px;
-            transition: all 0.3s;
-        }
-        
-        .step.active {
-            background-color: var(--primary-color);
-            transform: scale(1.2);
-        }
-        
-        .step-content {
-            display: none;
-        }
-        
-        .step-content.active {
-            display: block;
-            animation: fadeIn 0.4s ease-out;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid var(--card-border);
-            background-color: rgba(255, 255, 255, 0.05);
-            color: var(--text-color);
-        }
-        
-        .avatar-container {
-            display: flex;
-            justify-content: center;
-            margin: 30px 0;
-        }
-        
-        .info-text {
-            text-align: center;
-            margin-top: 10px;
-            opacity: 0.8;
-            font-size: 0.9em;
-        }
-        
-        .navigation {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 30px;
-        }
-        
-        .profile-preview {
-            text-align: center;
-            margin: 20px 0;
-        }
-        
-        .welcome-message {
-            font-size: 1.4em;
-            font-weight: 500;
-            margin-top: 15px;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -185,135 +82,73 @@
         </div>
     </div>
     
-    <!-- Onboarding Scripts -->
-    <script src="{{scriptsUri}}/zenji-core.js"></script>
     <script>
-        // Initialize VS Code API
         const vscode = acquireVsCodeApi();
+        let avatarDataUrl = null;
         
-        document.addEventListener('DOMContentLoaded', () => {
-            // Onboarding elements
-            const stepIndicators = document.querySelectorAll('.step');
-            const stepContents = document.querySelectorAll('.step-content');
-            const userNameInput = document.getElementById('userName');
-            const avatarUpload = document.getElementById('avatarUpload');
-            const avatarPreview = document.getElementById('avatar-preview');
-            const finalAvatarPreview = document.getElementById('final-avatar-preview');
-            const finalWelcomeMessage = document.getElementById('final-welcome-message');
-            
-            // Local state management
-            let zenjiState = {};
-            
-            // Load state from storage
-            function loadState() {
-                const state = vscode.getState();
-                if (state) {
-                    zenjiState = state;
-                    return state;
-                }
-                return {};
+        // Step navigation
+        document.getElementById('next-1').addEventListener('click', () => {
+            const userName = document.getElementById('userName').value.trim();
+            if (!userName) {
+                alert('Please enter your name to continue.');
+                return;
             }
             
-            // Save state to storage
-            function saveState() {
-                vscode.setState(zenjiState);
-            }
+            document.getElementById('step-1').classList.remove('active');
+            document.getElementById('step-2').classList.add('active');
+            document.getElementById('step-indicator-1').classList.remove('active');
+            document.getElementById('step-indicator-2').classList.add('active');
             
-            // Update a specific part of the state
-            function updateState(key, value) {
-                zenjiState[key] = value;
-                saveState();
-            }
+            // Update welcome message
+            document.getElementById('final-welcome-message').textContent = `Welcome, ${userName}`;
+        });
+        
+        document.getElementById('back-2').addEventListener('click', () => {
+            document.getElementById('step-2').classList.remove('active');
+            document.getElementById('step-1').classList.add('active');
+            document.getElementById('step-indicator-2').classList.remove('active');
+            document.getElementById('step-indicator-1').classList.add('active');
+        });
+        
+        document.getElementById('next-2').addEventListener('click', () => {
+            document.getElementById('step-2').classList.remove('active');
+            document.getElementById('step-3').classList.add('active');
+            document.getElementById('step-indicator-2').classList.remove('active');
+            document.getElementById('step-indicator-3').classList.add('active');
+        });
+        
+        document.getElementById('back-3').addEventListener('click', () => {
+            document.getElementById('step-3').classList.remove('active');
+            document.getElementById('step-2').classList.add('active');
+            document.getElementById('step-indicator-3').classList.remove('active');
+            document.getElementById('step-indicator-2').classList.add('active');
+        });
+        
+        document.getElementById('complete').addEventListener('click', () => {
+            const userName = document.getElementById('userName').value.trim();
             
-            // Send message to extension host
-            function sendMessage(command, data = {}) {
-                vscode.postMessage({
-                    command,
-                    ...data
-                });
-            }
-            
-            // Navigate to next step
-            function goToStep(step) {
-                stepIndicators.forEach((indicator, idx) => {
-                    indicator.classList.toggle('active', idx + 1 === step);
-                });
-                
-                stepContents.forEach((content, idx) => {
-                    content.classList.toggle('active', idx + 1 === step);
-                });
-            }
-            
-            // Next button for step 1
-            document.getElementById('next-1').addEventListener('click', () => {
-                const userName = userNameInput.value.trim();
-                if (!userName) {
-                    userNameInput.focus();
-                    return;
-                }
-                
-                // Save name to state
-                updateState('userName', userName);
-                
-                // Update welcome message
-                finalWelcomeMessage.textContent = `Welcome, ${userName}`;
-                
-                // Go to step 2
-                goToStep(2);
-            });
-            
-            // Back button for step 2
-            document.getElementById('back-2').addEventListener('click', () => {
-                goToStep(1);
-            });
-            
-            // Next button for step 2
-            document.getElementById('next-2').addEventListener('click', () => {
-                goToStep(3);
-            });
-            
-            // Back button for step 3
-            document.getElementById('back-3').addEventListener('click', () => {
-                goToStep(2);
-            });
-            
-            // Complete onboarding
-            document.getElementById('complete').addEventListener('click', () => {
-                // Set onboarding complete
-                updateState('onboardingComplete', true);
-                
-                // Send message to extension to open main dashboard
-                vscode.postMessage({ command: 'onboardingComplete' });
-            });
-            
-            // Handle avatar upload
-            avatarUpload.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        // Preview in both avatars
-                        avatarPreview.src = e.target.result;
-                        finalAvatarPreview.src = e.target.result;
-                        
-                        // Save to state
-                        updateState('avatar', e.target.result);
-                    };
-                    reader.readAsDataURL(file);
+            // Send message using the correct structure that matches extension.ts
+            vscode.postMessage({
+                command: 'onboardingComplete',
+                userData: {
+                    userName: userName,
+                    avatar: avatarDataUrl
                 }
             });
+        });
+        
+        // Avatar upload
+        document.getElementById('avatarUpload').addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
             
-            // Load state
-            const state = loadState();
-            if (state.userName) {
-                userNameInput.value = state.userName;
-                finalWelcomeMessage.textContent = `Welcome, ${state.userName}`;
-            }
-            
-            if (state.avatar) {
-                avatarPreview.src = state.avatar;
-                finalAvatarPreview.src = state.avatar;
-            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                avatarDataUrl = e.target.result;
+                document.getElementById('avatar-preview').src = avatarDataUrl;
+                document.getElementById('final-avatar-preview').src = avatarDataUrl;
+            };
+            reader.readAsDataURL(file);
         });
     </script>
 </body>

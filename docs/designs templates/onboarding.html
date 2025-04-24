@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Zenji</title>
+    <link rel="stylesheet" href="{{stylesUri}}/main.css">
+    <link rel="stylesheet" href="{{stylesUri}}/components.css">
+    <style>
+        /* Onboarding specific styles */
+        .welcome-header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        .tagline {
+            font-size: 1.2em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+        
+        .onboarding-card {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            animation: fadeIn 0.7s ease-out;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        
+        .step {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: rgba(106, 115, 193, 0.2);
+            margin: 0 8px;
+            transition: all 0.3s;
+        }
+        
+        .step.active {
+            background-color: var(--primary-color);
+            transform: scale(1.2);
+        }
+        
+        .step-content {
+            display: none;
+        }
+        
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-color);
+        }
+        
+        .avatar-container {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        
+        .info-text {
+            text-align: center;
+            margin-top: 10px;
+            opacity: 0.8;
+            font-size: 0.9em;
+        }
+        
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        
+        .profile-preview {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .welcome-message {
+            font-size: 1.4em;
+            font-weight: 500;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="welcome-header">
+            <h1>Welcome to Zenji AI</h1>
+            <div class="tagline">Your mindful AI coding companion</div>
+        </div>
+        
+        <div class="onboarding-card">
+            <div class="step-indicator">
+                <div class="step active" id="step-indicator-1"></div>
+                <div class="step" id="step-indicator-2"></div>
+                <div class="step" id="step-indicator-3"></div>
+            </div>
+
+            <!-- Step 1: Name Input -->
+            <div id="step-1" class="step-content active">
+                <h2>Let's get started</h2>
+                <p>Zenji is your AI coding companion designed to help you maintain mental wellness while coding. Let's set up your profile.</p>
+                
+                <div class="form-group">
+                    <label for="userName">What's your name?</label>
+                    <input type="text" id="userName" placeholder="Enter your name" autofocus />
+                </div>
+                
+                <div class="navigation">
+                    <div></div> <!-- Empty div for spacing -->
+                    <button id="next-1" class="btn">Next</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Profile Picture -->
+            <div id="step-2" class="step-content">
+                <h2>Choose a profile picture</h2>
+                
+                <div class="avatar-container">
+                    <div class="avatar">
+                        <img src="{{assetsUri}}/default-avatar.png" alt="Default Avatar" id="avatar-preview" />
+                        <div class="avatar-edit">
+                            <input type="file" id="avatarUpload" accept=".jpg, .jpeg, .png" />
+                            <label for="avatarUpload">📷</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <p class="info-text">Upload a profile picture or use our default avatar</p>
+                
+                <div class="navigation">
+                    <button id="back-2" class="btn btn-secondary">Back</button>
+                    <button id="next-2" class="btn">Next</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Completion -->
+            <div id="step-3" class="step-content">
+                <h2>You're all set!</h2>
+                
+                <div class="profile-preview">
+                    <div class="avatar-container">
+                        <div class="avatar">
+                            <img src="{{assetsUri}}/default-avatar.png" alt="User Avatar" id="final-avatar-preview" />
+                        </div>
+                    </div>
+                    <div class="welcome-message" id="final-welcome-message">Welcome, Friend</div>
+                </div>
+                
+                <p>Zenji is ready to help you maintain focus, track your mood, and support your mental wellness through your coding journey.</p>
+                
+                <div class="navigation">
+                    <button id="back-3" class="btn btn-secondary">Back</button>
+                    <button id="complete" class="btn">Enter Zenji Space</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</body>
+</html>
