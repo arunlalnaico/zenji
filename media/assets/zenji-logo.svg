@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- Zen circle -->
+  <circle cx="50" cy="50" r="40" fill="none" stroke="#6a73c1" stroke-width="2">
+    <animate attributeName="stroke-dasharray" 
+      from="0, 251.2" to="251.2, 0" 
+      dur="3s" repeatCount="indefinite" />
+  </circle>
+  
+  <!-- Pulsating inner light -->
+  <circle cx="50" cy="50" r="20" fill="url(#gradientPulse)">
+    <animate attributeName="r" values="18;22;18" dur="3s" repeatCount="indefinite" />
+    <animate attributeName="opacity" values="0.7;1;0.7" dur="3s" repeatCount="indefinite" />
+  </circle>
+  
+  <!-- Radiating waves -->
+  <g opacity="0.6">
+    <circle cx="50" cy="50" r="28" fill="none" stroke="#5cb3a7" stroke-width="1">
+      <animate attributeName="r" values="25;35;25" dur="4s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.8;0;0.8" dur="4s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="50" cy="50" r="32" fill="none" stroke="#5cb3a7" stroke-width="1">
+      <animate attributeName="r" values="30;40;30" dur="4s" begin="1s" repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0.6;0;0.6" dur="4s" begin="1s" repeatCount="indefinite" />
+    </circle>
+  </g>
+  
+  <!-- Leaf symbol in the center -->
+  <path d="M50,35 C55,42 65,48 65,58 C65,65 60,70 50,70 C40,70 35,65 35,58 C35,48 45,42 50,35 Z" fill="#2ecc71" opacity="0.9">
+    <animate attributeName="opacity" values="0.8;1;0.8" dur="3s" repeatCount="indefinite" />
+  </path>
+  
+  <!-- Leaf stem -->
+  <path d="M50,58 L50,70" stroke="#2ecc71" stroke-width="1.5" opacity="0.9" />
+  
+  <!-- Gradient definitions -->
+  <defs>
+    <radialGradient id="gradientPulse" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#a17ef6" />
+      <stop offset="100%" stop-color="#6a73c1" />
+      <animate attributeName="fx" values="40%;60%;40%" dur="5s" repeatCount="indefinite" />
+      <animate attributeName="fy" values="40%;60%;40%" dur="5s" repeatCount="indefinite" />
+    </radialGradient>
+  </defs>
+</svg>

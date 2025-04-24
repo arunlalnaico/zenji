@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Zenji</title>
+    <link rel="stylesheet" href="{{stylesUri}}/main.css">
+    <link rel="stylesheet" href="{{stylesUri}}/components.css">
+    <style>
+        /* Onboarding specific styles */
+        .welcome-header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        .tagline {
+            font-size: 1.2em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+        
+        .onboarding-card {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            animation: fadeIn 0.7s ease-out;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        
+        .step {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: rgba(106, 115, 193, 0.2);
+            margin: 0 8px;
+            transition: all 0.3s;
+        }
+        
+        .step.active {
+            background-color: var(--primary-color);
+            transform: scale(1.2);
+        }
+        
+        .step-content {
+            display: none;
+        }
+        
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-color);
+        }
+        
+        .avatar-container {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        
+        .info-text {
+            text-align: center;
+            margin-top: 10px;
+            opacity: 0.8;
+            font-size: 0.9em;
+        }
+        
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        
+        .profile-preview {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .welcome-message {
+            font-size: 1.4em;
+            font-weight: 500;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="welcome-header">
+            <h1>Welcome to Zenji AI</h1>
+            <div class="tagline">Your mindful AI coding companion</div>
+        </div>
+        
+        <div class="onboarding-card">
+            <div class="step-indicator">
+                <div class="step active" id="step-indicator-1"></div>
+                <div class="step" id="step-indicator-2"></div>
+                <div class="step" id="step-indicator-3"></div>
+            </div>
+
+            <!-- Step 1: Name Input -->
+            <div id="step-1" class="step-content active">
+                <h2>Let's get started</h2>
+                <p>Zenji is your AI coding companion designed to help you maintain mental wellness while coding. Let's set up your profile.</p>
+                
+                <div class="form-group">
+                    <label for="userName">What's your name?</label>
+                    <input type="text" id="userName" placeholder="Enter your name" autofocus />
+                </div>
+                
+                <div class="navigation">
+                    <div></div> <!-- Empty div for spacing -->
+                    <button id="next-1" class="btn">Next</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Profile Picture -->
+            <div id="step-2" class="step-content">
+                <h2>Choose a profile picture</h2>
+                
+                <div class="avatar-container">
+                    <div class="avatar">
+                        <img src="{{assetsUri}}/default-avatar.png" alt="Default Avatar" id="avatar-preview" />
+                        <div class="avatar-edit">
+                            <input type="file" id="avatarUpload" accept=".jpg, .jpeg, .png" />
+                            <label for="avatarUpload">📷</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <p class="info-text">Upload a profile picture or use our default avatar</p>
+                
+                <div class="navigation">
+                    <button id="back-2" class="btn btn-secondary">Back</button>
+                    <button id="next-2" class="btn">Next</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Completion -->
+            <div id="step-3" class="step-content">
+                <h2>You're all set!</h2>
+                
+                <div class="profile-preview">
+                    <div class="avatar-container">
+                        <div class="avatar">
+                            <img src="{{assetsUri}}/default-avatar.png" alt="User Avatar" id="final-avatar-preview" />
+                        </div>
+                    </div>
+                    <div class="welcome-message" id="final-welcome-message">Welcome, Friend</div>
+                </div>
+                
+                <p>Zenji is ready to help you maintain focus, track your mood, and support your mental wellness through your coding journey.</p>
+                
+                <div class="navigation">
+                    <button id="back-3" class="btn btn-secondary">Back</button>
+                    <button id="complete" class="btn">Enter Zenji Space</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Onboarding Scripts -->
+    <script src="{{scriptsUri}}/zenji-core.js"></script>
+    <script>
+        // Initialize VS Code API
+        const vscode = acquireVsCodeApi();
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Onboarding elements
+            const stepIndicators = document.querySelectorAll('.step');
+            const stepContents = document.querySelectorAll('.step-content');
+            const userNameInput = document.getElementById('userName');
+            const avatarUpload = document.getElementById('avatarUpload');
+            const avatarPreview = document.getElementById('avatar-preview');
+            const finalAvatarPreview = document.getElementById('final-avatar-preview');
+            const finalWelcomeMessage = document.getElementById('final-welcome-message');
+            
+            // Local state management
+            let zenjiState = {};
+            
+            // Load state from storage
+            function loadState() {
+                const state = vscode.getState();
+                if (state) {
+                    zenjiState = state;
+                    return state;
+                }
+                return {};
+            }
+            
+            // Save state to storage
+            function saveState() {
+                vscode.setState(zenjiState);
+            }
+            
+            // Update a specific part of the state
+            function updateState(key, value) {
+                zenjiState[key] = value;
+                saveState();
+            }
+            
+            // Send message to extension host
+            function sendMessage(command, data = {}) {
+                vscode.postMessage({
+                    command,
+                    ...data
+                });
+            }
+            
+            // Navigate to next step
+            function goToStep(step) {
+                stepIndicators.forEach((indicator, idx) => {
+                    indicator.classList.toggle('active', idx + 1 === step);
+                });
+                
+                stepContents.forEach((content, idx) => {
+                    content.classList.toggle('active', idx + 1 === step);
+                });
+            }
+            
+            // Next button for step 1
+            document.getElementById('next-1').addEventListener('click', () => {
+                const userName = userNameInput.value.trim();
+                if (!userName) {
+                    userNameInput.focus();
+                    return;
+                }
+                
+                // Save name to state
+                updateState('userName', userName);
+                
+                // Update welcome message
+                finalWelcomeMessage.textContent = `Welcome, ${userName}`;
+                
+                // Go to step 2
+                goToStep(2);
+            });
+            
+            // Back button for step 2
+            document.getElementById('back-2').addEventListener('click', () => {
+                goToStep(1);
+            });
+            
+            // Next button for step 2
+            document.getElementById('next-2').addEventListener('click', () => {
+                goToStep(3);
+            });
+            
+            // Back button for step 3
+            document.getElementById('back-3').addEventListener('click', () => {
+                goToStep(2);
+            });
+            
+            // Complete onboarding
+            document.getElementById('complete').addEventListener('click', () => {
+                // Set onboarding complete
+                updateState('onboardingComplete', true);
+                
+                // Send message to extension to open main dashboard
+                vscode.postMessage({ command: 'onboardingComplete' });
+            });
+            
+            // Handle avatar upload
+            avatarUpload.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        // Preview in both avatars
+                        avatarPreview.src = e.target.result;
+                        finalAvatarPreview.src = e.target.result;
+                        
+                        // Save to state
+                        updateState('avatar', e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Load state
+            const state = loadState();
+            if (state.userName) {
+                userNameInput.value = state.userName;
+                finalWelcomeMessage.textContent = `Welcome, ${state.userName}`;
+            }
+            
+            if (state.avatar) {
+                avatarPreview.src = state.avatar;
+                finalAvatarPreview.src = state.avatar;
+            }
+        });
+    </script>
+</body>
+</html>
