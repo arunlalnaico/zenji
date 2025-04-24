@@ -1,0 +1,37 @@
+{
+    "name": "zenjispace",
+    "displayName": "Zenjispace",
+    "description": "A mindful AI coding companion webview for VS Code.",
+    "version": "1.0.0",
+    "engines": {
+        "vscode": "^1.60.0"
+    },
+    "activationEvents": [
+        "onCommand:zenjispace.open"
+    ],
+    "main": "./extension/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "zenjispace.open",
+                "title": "Open Zenjispace"
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "tsc -p ./",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "o": "npm run compile && vsce package"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/yourusername/zenji.git"
+    },
+    "license": "MIT",
+    "devDependencies": {
+        "typescript": "^4.0.0",
+        "@types/node": "^16.18.34",
+        "@types/vscode": "^1.60.0"
+    }
+}
