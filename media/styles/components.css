@@ -272,6 +272,31 @@
     margin-top: 20px;
 }
 
+#journalEntry {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--card-border);
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-color);
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 100px;
+    resize: vertical;
+    margin-bottom: 15px;
+}
+
+textarea {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--card-border);
+    background-color: rgba(255, 255, 255, 0.05);
+    resize: vertical;
+    margin-bottom: 15px;
+    color: var(--text-color);
+    width: 100%;
+}
+
 .journal-entry {
     background-color: rgba(106, 115, 193, 0.05);
     border-radius: 8px;
