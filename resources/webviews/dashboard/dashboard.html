@@ -399,7 +399,7 @@
                 syncToCloudBtn.disabled = true;
                 syncToCloudBtn.textContent = 'Syncing...';
                 syncStatus.innerHTML = `<span>Syncing... <svg class="sync-loader" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="20" height="20" fill="none" stroke="currentColor" stroke-width="8"><circle cx="50" cy="50" r="40" stroke-opacity="0.3"/><path d="M50 10 a40 40 0 0 1 0 80" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="1s" repeatCount="indefinite"/></path></svg></span>`;
-                sendMessage('syncToCloud');
+                sendMessage('executeCommand', { commandId: 'zenjispace.syncToCloud' });
             });
             
             // Handle restore from cloud button
@@ -407,7 +407,7 @@
                 if (confirm('This will replace your current data with data from the cloud. Continue?')) {
                     syncFromCloudBtn.disabled = true;
                     syncFromCloudBtn.textContent = 'Restoring...';
-                    sendMessage('syncFromCloud');
+                    sendMessage('executeCommand', { commandId: 'zenjispace.syncFromCloud' });
                 }
             });
             

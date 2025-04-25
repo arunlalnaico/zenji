@@ -245,16 +245,20 @@ function createWebviewPanel(context, viewType, title, templatePath) {
         switch (message.command) {
             case 'onboardingComplete':
                 context.globalState.update('onboardingComplete', true);
-                if (message.userData && message.userData.userName) {
+                // If GitHub authentication was used during onboarding, use the GitHub data
+                if (message.userData && message.userData.githubAuthenticated && message.userData.githubUser) {
+                    // Use the GitHub profile data for the user's Zenji profile
+                    context.globalState.update('userName', message.userData.githubUser.name);
+                    context.globalState.update('avatar', message.userData.githubUser.avatarUrl);
+                    vscode.window.showInformationMessage(`Welcome, ${message.userData.githubUser.name}! Your profile is synced across your devices.`);
+                }
+                else if (message.userData && message.userData.userName) {
+                    // Fallback to manually entered data if somehow GitHub auth wasn't used
                     context.globalState.update('userName', message.userData.userName);
-                }
-                if (message.userData && message.userData.avatar) {
-                    context.globalState.update('avatar', message.userData.avatar);
-                }
-                // If the user authenticated with GitHub during onboarding, store that info
-                if (message.userData && message.userData.githubAuthenticated) {
-                    // The GitHub user ID should already be stored from the authentication process
-                    // So we don't need to store it again here
+                    if (message.userData.avatar) {
+                        context.globalState.update('avatar', message.userData.avatar);
+                    }
+                    vscode.window.showInformationMessage(`Welcome to Zenji, ${message.userData.userName}!`);
                 }
                 openZenjiDashboard(context);
                 return;

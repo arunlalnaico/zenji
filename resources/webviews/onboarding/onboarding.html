@@ -55,26 +55,6 @@
             vertical-align: middle;
         }
         
-        .or-divider {
-            display: flex;
-            align-items: center;
-            margin: 20px 0;
-            text-align: center;
-        }
-        
-        .or-divider::before,
-        .or-divider::after {
-            content: "";
-            flex: 1;
-            border-bottom: 1px solid var(--card-border);
-        }
-        
-        .or-divider span {
-            margin: 0 10px;
-            opacity: 0.7;
-            font-size: 0.9em;
-        }
-        
         .github-button {
             display: flex;
             align-items: center;
@@ -103,6 +83,26 @@
             font-size: 0.85em;
             opacity: 0.8;
         }
+
+        .profile-preview {
+            text-align: center;
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .centered-text {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .large-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
@@ -116,98 +116,57 @@
             <div class="step-indicator">
                 <div class="step active" id="step-indicator-1"></div>
                 <div class="step" id="step-indicator-2"></div>
-                <div class="step" id="step-indicator-3"></div>
             </div>
 
-            <!-- Step 1: Name Input -->
+            <!-- Step 1: GitHub Authentication -->
             <div id="step-1" class="step-content active">
                 <h2>Let's get started</h2>
-                <p>Zenji is your AI coding companion designed to help you maintain mental wellness while coding. Let's set up your profile.</p>
+                <p>Zenji is your AI coding companion designed to help you maintain mental wellness while coding. Sign in with GitHub to set up your profile and enable sync across devices.</p>
                 
-                <div class="form-group">
-                    <label for="userName">What's your name?</label>
-                    <input type="text" id="userName" placeholder="Enter your name" autofocus />
+                <div id="github-status">
+                    <div id="github-not-connected" style="display: block;">
+                        <button id="githubLoginBtn" class="github-button">
+                            <span class="github-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.387.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.73.083-.73 1.205.085 1.838 1.236 1.838 1.236 1.07 1.835 2.807 1.305 3.492.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.468-2.38 1.235-3.22-.124-.303-.535-1.524.118-3.176 0 0 1.006-.322 3.3 1.23.96-.267 1.98-.4 3-.405 1.02.005 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.655 1.65.245 2.873.12 3.176.77.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.43.37.815 1.103.815 2.223 0 1.605-.015 2.9-.015 3.3 0 .32.217.695.825.577C20.565 21.795 24 17.298 24 12c0-6.63-5.37-12-12-12z"/>
+                                </svg>
+                            </span>
+                            Sign in with GitHub
+                        </button>
+                        <p class="github-info">We'll use your GitHub profile information to set up your Zenji account. Your data will be synced across devices.</p>
+                    </div>
                 </div>
                 
                 <div class="navigation">
                     <div></div> <!-- Empty div for spacing -->
-                    <button id="next-1" class="btn">Next</button>
+                    <div></div> <!-- Empty div for spacing -->
                 </div>
             </div>
 
-            <!-- Step 2: Profile Picture -->
+            <!-- Step 2: Completion -->
             <div id="step-2" class="step-content">
-                <h2>Choose a profile picture</h2>
-                
-                <div class="avatar-container">
-                    <div class="avatar">
-                        <img src="{{assetsUri}}/default-avatar.png" alt="Default Avatar" id="avatar-preview" />
-                        <div class="avatar-edit">
-                            <input type="file" id="avatarUpload" accept=".jpg, .jpeg, .png" />
-                            <label for="avatarUpload">📷</label>
-                        </div>
-                    </div>
-                </div>
-                
-                <p class="info-text">Upload a profile picture or use our default avatar</p>
-                
-                <div class="navigation">
-                    <button id="back-2" class="btn btn-secondary">Back</button>
-                    <button id="next-2" class="btn">Next</button>
-                </div>
-            </div>
-
-            <!-- Step 3: Completion -->
-            <div id="step-3" class="step-content">
                 <h2>You're all set!</h2>
                 
                 <div class="profile-preview">
-                    <div class="avatar-container">
-                        <div class="avatar">
-                            <img src="{{assetsUri}}/default-avatar.png" alt="User Avatar" id="final-avatar-preview" />
+                    <img id="github-avatar-large" src="" alt="GitHub Avatar" class="large-avatar" />
+                    <div class="welcome-message" id="final-welcome-message">Welcome to Zenji</div>
+                </div>
+                
+                <div id="github-connected" class="centered-text">
+                    <div class="github-profile">
+                        <img id="github-avatar" src="" alt="GitHub Avatar" class="github-avatar" />
+                        <div>
+                            <div id="github-name" class="github-name"></div>
+                            <div id="github-login" class="github-login"></div>
                         </div>
                     </div>
-                    <div class="welcome-message" id="final-welcome-message">Welcome, Friend</div>
+                    <p>Your Zenji profile will be synced across devices.</p>
                 </div>
                 
                 <p>Zenji is ready to help you maintain focus, track your mood, and support your mental wellness through your coding journey.</p>
                 
-                <div class="github-section">
-                    <h3>Connect with GitHub</h3>
-                    <p>Sign in with GitHub to sync your Zenji profile across multiple devices.</p>
-                    
-                    <div id="github-status">
-                        <div id="github-not-connected" style="display: block;">
-                            <button id="githubLoginBtn" class="github-button">
-                                <span class="github-icon">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.387.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.73.083-.73 1.205.085 1.838 1.236 1.838 1.236 1.07 1.835 2.807 1.305 3.492.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.468-2.38 1.235-3.22-.124-.303-.535-1.524.118-3.176 0 0 1.006-.322 3.3 1.23.96-.267 1.98-.4 3-.405 1.02.005 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.655 1.65.245 2.873.12 3.176.77.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.43.37.815 1.103.815 2.223 0 1.605-.015 2.9-.015 3.3 0 .32.217.695.825.577C20.565 21.795 24 17.298 24 12c0-6.63-5.37-12-12-12z"/>
-                                    </svg>
-                                </span>
-                                Sign in with GitHub
-                            </button>
-                            <p class="github-info">Signing in with GitHub enables cloud sync for your profile data.</p>
-                        </div>
-                        
-                        <div id="github-connected" style="display: none;">
-                            <div class="github-profile">
-                                <img id="github-avatar" src="" alt="GitHub Avatar" class="github-avatar" />
-                                <div>
-                                    <div id="github-name" class="github-name"></div>
-                                    <div id="github-login" class="github-login"></div>
-                                </div>
-                            </div>
-                            <p>Your Zenji profile will be synced across devices.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="or-divider">
-                        <span>OR</span>
-                    </div>
-                </div>
-                
                 <div class="navigation">
-                    <button id="back-3" class="btn btn-secondary">Back</button>
+                    <div></div> <!-- Empty div for spacing -->
                     <button id="complete" class="btn">Enter Zenji Space</button>
                 </div>
             </div>
@@ -218,68 +177,27 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Use the singleton instead of directly acquiring the API
             const vscode = vscodeApi();
-            let avatarDataUrl = null;
             let githubAuthenticated = false;
             let githubUserInfo = null;
-            
-            // Step navigation
-            document.getElementById('next-1').addEventListener('click', () => {
-                const userName = document.getElementById('userName').value.trim();
-                if (!userName) {
-                    alert('Please enter your name to continue.');
-                    return;
-                }
-                
-                document.getElementById('step-1').classList.remove('active');
-                document.getElementById('step-2').classList.add('active');
-                document.getElementById('step-indicator-1').classList.remove('active');
-                document.getElementById('step-indicator-2').classList.add('active');
-                
-                // Update welcome message
-                document.getElementById('final-welcome-message').textContent = `Welcome, ${userName}`;
-            });
-            
-            document.getElementById('back-2').addEventListener('click', () => {
-                document.getElementById('step-2').classList.remove('active');
-                document.getElementById('step-1').classList.add('active');
-                document.getElementById('step-indicator-2').classList.remove('active');
-                document.getElementById('step-indicator-1').classList.add('active');
-            });
-            
-            document.getElementById('next-2').addEventListener('click', () => {
-                document.getElementById('step-2').classList.remove('active');
-                document.getElementById('step-3').classList.add('active');
-                document.getElementById('step-indicator-2').classList.remove('active');
-                document.getElementById('step-indicator-3').classList.add('active');
-            });
-            
-            document.getElementById('back-3').addEventListener('click', () => {
-                document.getElementById('step-3').classList.remove('active');
-                document.getElementById('step-2').classList.add('active');
-                document.getElementById('step-indicator-3').classList.remove('active');
-                document.getElementById('step-indicator-2').classList.add('active');
-            });
-            
-            document.getElementById('complete').addEventListener('click', () => {
-                const userName = document.getElementById('userName').value.trim();
-                
-                // Send message using the correct structure that matches extension.ts
-                vscode.postMessage({
-                    command: 'onboardingComplete',
-                    userData: {
-                        userName: userName,
-                        avatar: avatarDataUrl,
-                        githubAuthenticated: githubAuthenticated,
-                        githubUser: githubUserInfo
-                    }
-                });
-            });
             
             // GitHub login button
             document.getElementById('githubLoginBtn').addEventListener('click', () => {
                 // Request GitHub login from the extension
                 vscode.postMessage({
                     command: 'githubLogin'
+                });
+            });
+            
+            document.getElementById('complete').addEventListener('click', () => {
+                // Send message using the correct structure that matches extension.ts
+                vscode.postMessage({
+                    command: 'onboardingComplete',
+                    userData: {
+                        userName: githubUserInfo ? githubUserInfo.name : 'User',
+                        avatar: githubUserInfo ? githubUserInfo.avatarUrl : null,
+                        githubAuthenticated: githubAuthenticated,
+                        githubUser: githubUserInfo
+                    }
                 });
             });
             
@@ -295,47 +213,24 @@
                         // Store GitHub user info
                         githubUserInfo = message.githubUser;
                         
-                        // Update UI to show connected state
-                        document.getElementById('github-not-connected').style.display = 'none';
-                        document.getElementById('github-connected').style.display = 'block';
+                        // Move to step 2
+                        document.getElementById('step-1').classList.remove('active');
+                        document.getElementById('step-2').classList.add('active');
+                        document.getElementById('step-indicator-1').classList.remove('active');
+                        document.getElementById('step-indicator-2').classList.add('active');
                         
                         // Set GitHub profile information
                         document.getElementById('github-avatar').src = message.githubUser.avatarUrl;
+                        document.getElementById('github-avatar-large').src = message.githubUser.avatarUrl;
                         document.getElementById('github-name').textContent = message.githubUser.name;
                         document.getElementById('github-login').textContent = '@' + message.githubUser.login;
                         
-                        // Update welcome message with sync badge if not already present
+                        // Update welcome message with name and sync badge
                         const welcomeMessage = document.getElementById('final-welcome-message');
-                        if (!welcomeMessage.querySelector('.sync-badge')) {
-                            welcomeMessage.innerHTML += ' <span class="sync-badge">Sync Enabled</span>';
-                        }
-                    } else {
-                        // Update UI to show not connected state
-                        document.getElementById('github-not-connected').style.display = 'block';
-                        document.getElementById('github-connected').style.display = 'none';
-                        
-                        // Remove sync badge if present
-                        const welcomeMessage = document.getElementById('final-welcome-message');
-                        const syncBadge = welcomeMessage.querySelector('.sync-badge');
-                        if (syncBadge) {
-                            welcomeMessage.removeChild(syncBadge);
-                        }
+                        welcomeMessage.textContent = `Welcome, ${message.githubUser.name}`;
+                        welcomeMessage.innerHTML += ' <span class="sync-badge">Sync Enabled</span>';
                     }
                 }
-            });
-            
-            // Avatar upload
-            document.getElementById('avatarUpload').addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (!file) return;
-                
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    avatarDataUrl = e.target.result;
-                    document.getElementById('avatar-preview').src = avatarDataUrl;
-                    document.getElementById('final-avatar-preview').src = avatarDataUrl;
-                };
-                reader.readAsDataURL(file);
             });
             
             // Check for existing GitHub authentication when the page loads
