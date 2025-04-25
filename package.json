@@ -3,6 +3,7 @@
     "displayName": "Zenjispace",
     "description": "A mindful AI coding companion webview for VS Code.",
     "version": "1.2.3",
+    "publisher": "arunlals89@gmail.com",
     "engines": {
         "vscode": "^1.60.0"
     },
@@ -45,7 +46,7 @@
         "package": "vsce package",
         "clean": "node -e \"if(require('fs').existsSync('./out')){require('fs').rmSync('./out',{recursive:true,force:true})}\"",
         "build": "npm run clean && npm run compile && npm run package",
-        "uninstall-extension": "code --uninstall-extension undefined_publisher.zenjispace",
+        "uninstall-extension": "code --uninstall-extension arunlals89@gmail.com.zenjispace",
         "install": "code --install-extension ./zenjispace-1.2.3.vsix",
         "restart-vscode": "code --reloadWindow",
         "reload-extensions": "code --command workbench.action.developer.reloadWindow",
@@ -57,7 +58,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/yourusername/zenji.git"
+        "url": "https://github.com/arunlalnaico/zenji.git"
     },
     "license": "MIT",
     "devDependencies": {
