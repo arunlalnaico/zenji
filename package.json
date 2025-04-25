@@ -47,7 +47,7 @@
         "clean": "node -e \"if(require('fs').existsSync('./out')){require('fs').rmSync('./out',{recursive:true,force:true})}\"",
         "build": "npm run clean && npm run compile && npm run package",
         "uninstall-extension": "code --uninstall-extension arunlals89@gmail.com.zenjispace",
-        "install": "code --install-extension ./zenjispace-1.2.3.vsix",
+        "installpkg": "code --install-extension ./zenjispace-1.2.3.vsix",
         "restart-vscode": "code --reloadWindow",
         "reload-extensions": "code --command workbench.action.developer.reloadWindow",
         "install-and-restart": "npm run install && npm run restart-vscode",
@@ -76,6 +76,7 @@
     ],
     "dependencies": {
         "dotenv": "^16.5.0",
-        "mongodb": "^6.16.0"
+        "mongodb": "^6.16.0",
+        "vsce": "^2.15.0"
     }
 }
