@@ -30,6 +30,21 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Check for existing auth session
     checkForExistingSession(context);
+    
+    // Check if this is a fresh installation or an update
+    const currentVersion = vscode.extensions.getExtension('arunlals89@gmail.com.zenjispace')?.packageJSON.version;
+    const previousVersion = context.globalState.get('extensionVersion');
+    
+    // If there's no previous version stored, or the version has changed, it's a new install or update
+    if (!previousVersion || previousVersion !== currentVersion) {
+        // Store the current version
+        context.globalState.update('extensionVersion', currentVersion);
+        
+        // Automatically open Zenjispace after installation or update
+        setTimeout(() => {
+            vscode.commands.executeCommand('zenjispace.open');
+        }, 1500); // Short delay to ensure VS Code UI is ready
+    }
 
     const isFirstRun = context.globalState.get('zenjiFirstRun', true);
     const onboardingComplete = context.globalState.get('onboardingComplete', false);
@@ -253,7 +268,7 @@ function createWebviewPanel(context: vscode.ExtensionContext, viewType: string, 
                         // Use the GitHub profile data for the user's Zenji profile
                         context.globalState.update('userName', message.userData.githubUser.name);
                         context.globalState.update('avatar', message.userData.githubUser.avatarUrl);
-                        vscode.window.showInformationMessage(`Welcome, ${message.userData.githubUser.name}! Your profile is synced across your devices.`);
+                        vscode.window.showInformationMessage(`Welcome, ${message.userData.githubUser.name}! Your Zenji profile has been created Successfully!.`);
                     } else if (message.userData && message.userData.userName) {
                         // Fallback to manually entered data if somehow GitHub auth wasn't used
                         context.globalState.update('userName', message.userData.userName);
@@ -358,7 +373,11 @@ function createWebviewPanel(context: vscode.ExtensionContext, viewType: string, 
                     
                 case 'updateSound':
                     if (message.sound !== undefined) {
+                        // Save the full sound object (including ID, URL and name)
                         context.globalState.update('sound', message.sound);
+                        
+                        // Log the saved sound data for debugging
+                        console.log('Saving sound data:', message.sound);
                         
                         // Auto-sync when sound preference changes
                         autoSyncData(context);
@@ -435,14 +454,15 @@ async function syncDataToCloud(context: vscode.ExtensionContext) {
         const userData = {
             timestamp: new Date().toISOString(),
             data: {
-                avatar: context.globalState.get('avatar'),
-                userName: context.globalState.get('userName'),
-                focusStats: context.globalState.get('focusStats'),
-                journalEntries: context.globalState.get('journalEntries'),
-                chatHistory: context.globalState.get('chatHistory'),
-                activeTab: context.globalState.get('activeTab'),
-                activeJournalTab: context.globalState.get('activeJournalTab'),
-                sound: context.globalState.get('sound')
+            avatar: context.globalState.get('avatar'),
+            userName: context.globalState.get('userName'),
+            focusStats: context.globalState.get('focusStats'),
+            journalEntries: context.globalState.get('journalEntries'),
+            chatHistory: context.globalState.get('chatHistory'),
+            activeTab: context.globalState.get('activeTab'),
+            activeJournalTab: context.globalState.get('activeJournalTab'),
+            sound: context.globalState.get('sound'),
+            soundUrl: context.globalState.get('soundUrl') // Added sound URL
             }
         };
 

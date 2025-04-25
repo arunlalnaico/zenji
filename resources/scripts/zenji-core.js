@@ -300,19 +300,44 @@ function initializeSounds() {
     const soundsContainer = document.getElementById('soundsContainer');
     const audioPlayer = document.getElementById('audioPlayer');
     
-    // Sample sound data - in a real app, this might come from the extension
+    // Retrieve the assetsUri from the HTML (injected during webview panel creation)
+    const assetsUri = document.querySelector('meta[name="assetsUri"]')?.getAttribute('content');
+    
+    if (!assetsUri) {
+        console.error('Assets URI not found in meta tag');
+        return;
+    }
+    
+    // Sound data with public URLs instead of local files
     const sounds = [
-        { id: 'rain', name: 'Rain', description: 'Gentle rainfall', url: '/resources/assets/sounds/rain.mp3', icon: '🌧️' },
-        { id: 'forest', name: 'Forest', description: 'Birds and trees', url: '/resources/assets/sounds/forest.mp3', icon: '🌲' },
-        { id: 'waves', name: 'Ocean Waves', description: 'Calming sea sounds', url: '/resources/assets/sounds/waves.mp3', icon: '🌊' },
-        { id: 'cafe', name: 'Café', description: 'Coffee shop ambience', url: '/resources/assets/sounds/cafe.mp3', icon: '☕' },
-        { id: 'whitenoise', name: 'White Noise', description: 'Block distractions', url: '/resources/assets/sounds/whitenoise.mp3', icon: '🔊' },
-        { id: 'lofi', name: 'Lo-Fi', description: 'Relaxing beats', url: '/resources/assets/sounds/lofi.mp3', icon: '🎵' }
+        { id: 'rain', name: 'Rain', description: 'Gentle rainfall', url: `https://cdn.pixabay.com/download/audio/2024/10/30/audio_42e6870f29.mp3?filename=calming-rain-257596.mp3`, icon: '🌧️' },
+        { id: 'forest', name: 'Forest', description: 'Birds and trees', url: `https://cdn.pixabay.com/download/audio/2025/02/03/audio_7599bcb342.mp3?filename=forest-ambience-296528.mp3`, icon: '🌲' },
+        { id: 'waves', name: 'Ocean Waves', description: 'Calming sea sounds', url: `https://cdn.pixabay.com/download/audio/2025/03/14/audio_75bef6c8dd.mp3?filename=sounds-of-waves-313367.mp3`, icon: '🌊' },
+        { id: 'cafe', name: 'Café', description: 'Coffee shop ambience', url: `https://cdn.pixabay.com/download/audio/2021/10/10/audio_1009cd220b.mp3?filename=cafe-ambience-9263.mp3`, icon: '☕' },
+        { id: 'whitenoise', name: 'White Noise', description: 'Block distractions', url: `https://cdn.pixabay.com/download/audio/2024/10/31/audio_a181bdd17b.mp3?filename=white-noise-257802.mp3`, icon: '🔊' },
+        { id: 'lofi', name: 'Lo-Fi', description: 'Relaxing beats', url: `https://cdn.pixabay.com/download/audio/2025/04/22/audio_21619756a2.mp3?filename=lofi-sample-if-i-cant-have-you-330746.mp3`, icon: '🎵' }
     ];
+    
+    // Create a sound lookup map for easy retrieval
+    const soundMap = {};
+    sounds.forEach(sound => {
+        soundMap[sound.id] = sound;
+    });
     
     // Load active sound from state
     const state = loadState();
-    let activeSound = state.sound;
+    let activeSound = state.sound ? state.sound.id || state.sound : null;
+    let activeSoundObj = null;
+    
+    // If the active sound is no longer in our available sounds list, reset it
+    if (activeSound && !sounds.some(sound => sound.id === activeSound)) {
+        activeSound = null;
+        state.sound = null;
+        saveState(state);
+    } else if (activeSound) {
+        // Get the full sound object
+        activeSoundObj = soundMap[activeSound];
+    }
     
     // Create sound cards
     sounds.forEach(sound => {
@@ -338,6 +363,7 @@ function initializeSounds() {
                 audioPlayer.pause();
                 soundCard.classList.remove('active');
                 activeSound = null;
+                activeSoundObj = null;
             } else {
                 // Remove active class from all sound cards
                 allSoundCards.forEach(card => card.classList.remove('active'));
@@ -345,25 +371,72 @@ function initializeSounds() {
                 // Add active class to clicked sound
                 soundCard.classList.add('active');
                 
-                // Update audio player
+                // Update audio player with proper error handling
                 audioPlayer.src = sound.url;
+                
+                // Play the audio with error handling
                 audioPlayer.play().catch(error => {
                     console.error('Error playing audio:', error);
+                    
+                    // Show error message to user
+                    const errorMsg = document.createElement('div');
+                    errorMsg.className = 'sound-error';
+                    errorMsg.textContent = 'Could not play sound. Audio file may be missing.';
+                    errorMsg.style.color = 'red';
+                    errorMsg.style.fontSize = '0.9em';
+                    errorMsg.style.marginTop = '10px';
+                    errorMsg.style.padding = '5px';
+                    
+                    // Remove any existing error messages
+                    const existingError = soundsContainer.querySelector('.sound-error');
+                    if (existingError) {
+                        existingError.remove();
+                    }
+                    
+                    // Add the error message
+                    soundsContainer.appendChild(errorMsg);
+                    
+                    // Remove active class since playback failed
+                    soundCard.classList.remove('active');
+                    activeSound = null;
+                    activeSoundObj = null;
                 });
                 
                 activeSound = sound.id;
+                activeSoundObj = sound;
             }
             
-            // Save to state
-            state.sound = activeSound;
+            // Save the full sound object to state, not just the ID
+            state.sound = activeSoundObj ? {
+                id: activeSoundObj.id,
+                url: activeSoundObj.url,
+                name: activeSoundObj.name
+            } : null;
             saveState(state);
             
-            // Send sound preference to extension for syncing
-            sendMessage('updateSound', { sound: activeSound });
+            // Send full sound object to extension for syncing
+            sendMessage('updateSound', { sound: state.sound });
         });
         
         soundsContainer.appendChild(soundCard);
     });
+    
+    // If a sound was previously active, make sure it starts playing
+    if (activeSoundObj) {
+        audioPlayer.src = activeSoundObj.url;
+        // Don't autoplay on load to avoid unexpected sounds
+    }
+    
+    // Add a message if there are no sounds available
+    if (sounds.length === 0) {
+        const noSoundsMsg = document.createElement('div');
+        noSoundsMsg.className = 'no-sounds-message';
+        noSoundsMsg.textContent = 'No sound files are currently available.';
+        noSoundsMsg.style.textAlign = 'center';
+        noSoundsMsg.style.padding = '20px';
+        noSoundsMsg.style.opacity = '0.7';
+        soundsContainer.appendChild(noSoundsMsg);
+    }
 }
 
 // Initialize Journal

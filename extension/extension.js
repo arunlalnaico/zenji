@@ -42,6 +42,7 @@ let authStatusBarItem;
 // Define session token to check if the user is authenticated
 let session;
 function activate(context) {
+    var _a;
     // Initialize MongoDB connection
     (0, mongodb_service_1.initMongoDB)(context).catch(error => {
         console.error('Failed to initialize MongoDB:', error);
@@ -60,6 +61,18 @@ function activate(context) {
     context.subscriptions.push(authStatusBarItem);
     // Check for existing auth session
     checkForExistingSession(context);
+    // Check if this is a fresh installation or an update
+    const currentVersion = (_a = vscode.extensions.getExtension('arunlals89@gmail.com.zenjispace')) === null || _a === void 0 ? void 0 : _a.packageJSON.version;
+    const previousVersion = context.globalState.get('extensionVersion');
+    // If there's no previous version stored, or the version has changed, it's a new install or update
+    if (!previousVersion || previousVersion !== currentVersion) {
+        // Store the current version
+        context.globalState.update('extensionVersion', currentVersion);
+        // Automatically open Zenjispace after installation or update
+        setTimeout(() => {
+            vscode.commands.executeCommand('zenjispace.open');
+        }, 1500); // Short delay to ensure VS Code UI is ready
+    }
     const isFirstRun = context.globalState.get('zenjiFirstRun', true);
     const onboardingComplete = context.globalState.get('onboardingComplete', false);
     if (isFirstRun) {
@@ -340,7 +353,10 @@ function createWebviewPanel(context, viewType, title, templatePath) {
                 return;
             case 'updateSound':
                 if (message.sound !== undefined) {
+                    // Save the full sound object (including ID, URL and name)
                     context.globalState.update('sound', message.sound);
+                    // Log the saved sound data for debugging
+                    console.log('Saving sound data:', message.sound);
                     // Auto-sync when sound preference changes
                     autoSyncData(context);
                 }
@@ -404,7 +420,8 @@ function syncDataToCloud(context) {
                     chatHistory: context.globalState.get('chatHistory'),
                     activeTab: context.globalState.get('activeTab'),
                     activeJournalTab: context.globalState.get('activeJournalTab'),
-                    sound: context.globalState.get('sound')
+                    sound: context.globalState.get('sound'),
+                    soundUrl: context.globalState.get('soundUrl') // Added sound URL
                 }
             };
             // Ensure MongoDB is initialized before attempting to save data
