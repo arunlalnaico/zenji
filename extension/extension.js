@@ -71,6 +71,22 @@ function activate(context) {
     })), vscode.commands.registerCommand('zenjispace.forceCompleteOnboarding', () => __awaiter(this, void 0, void 0, function* () {
         yield context.globalState.update('onboardingComplete', true);
         openZenjiDashboard(context);
+    })), vscode.commands.registerCommand('zenjispace.syncToCloud', () => __awaiter(this, void 0, void 0, function* () {
+        try {
+            vscode.window.showInformationMessage('Syncing Zenjispace data to the cloud...');
+            // Add your cloud sync logic here
+            // Example: Call an API or upload data to a cloud storage
+            yield syncDataToCloud(context);
+            vscode.window.showInformationMessage('Zenjispace data synced successfully!');
+        }
+        catch (error) {
+            if (error instanceof Error) {
+                vscode.window.showErrorMessage(`Failed to sync data: ${error.message}`);
+            }
+            else {
+                vscode.window.showErrorMessage('Failed to sync data: Unknown error occurred.');
+            }
+        }
     })));
 }
 exports.activate = activate;
@@ -91,11 +107,11 @@ function clearAllData(context) {
 }
 function openZenjiOnboarding(context) {
     zenjiPanel === null || zenjiPanel === void 0 ? void 0 : zenjiPanel.dispose();
-    zenjiPanel = createWebviewPanel(context, 'zenjiOnboarding', 'Welcome to Zenjispace', 'media/webviews/onboarding/onboarding.html');
+    return createWebviewPanel(context, 'zenjiOnboarding', 'Welcome to Zenjispace', 'resources/webviews/onboarding/onboarding.html');
 }
 function openZenjiDashboard(context) {
     zenjiPanel === null || zenjiPanel === void 0 ? void 0 : zenjiPanel.dispose();
-    zenjiPanel = createWebviewPanel(context, 'zenjispace', 'Zenjispace', 'media/webviews/dashboard/dashboard.html');
+    return createWebviewPanel(context, 'zenjispace', 'Zenjispace', 'resources/webviews/dashboard/dashboard.html');
 }
 function createWebviewPanel(context, viewType, title, templatePath) {
     // Only check if we're trying to open the dashboard
@@ -103,7 +119,7 @@ function createWebviewPanel(context, viewType, title, templatePath) {
         const isOnboardingComplete = context.globalState.get('onboardingComplete', false);
         // If onboarding is not complete, redirect to onboarding page
         if (!isOnboardingComplete) {
-            return createWebviewPanel(context, 'zenjiOnboarding', 'Welcome to Zenjispace', 'media/webviews/onboarding/onboarding.html');
+            return createWebviewPanel(context, 'zenjiOnboarding', 'Welcome to Zenjispace', 'resources/webviews/onboarding/onboarding.html');
         }
     }
     const panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.One, {
@@ -111,12 +127,12 @@ function createWebviewPanel(context, viewType, title, templatePath) {
         retainContextWhenHidden: true,
         localResourceRoots: [vscode.Uri.file(context.extensionPath)]
     });
-    const mediaUri = panel.webview.asWebviewUri(vscode.Uri.file(context.asAbsolutePath('media')));
-    const stylesUri = panel.webview.asWebviewUri(vscode.Uri.file(context.asAbsolutePath('media/styles')));
-    const scriptsUri = panel.webview.asWebviewUri(vscode.Uri.file(context.asAbsolutePath('media/scripts')));
-    const assetsUri = panel.webview.asWebviewUri(vscode.Uri.file(context.asAbsolutePath('media/assets')));
+    const resourcesUri = panel.webview.asWebviewUri(vscode.Uri.file(context.asAbsolutePath('resources')));
+    const stylesUri = panel.webview.asWebviewUri(vscode.Uri.file(context.asAbsolutePath('resources/styles')));
+    const scriptsUri = panel.webview.asWebviewUri(vscode.Uri.file(context.asAbsolutePath('resources/scripts')));
+    const assetsUri = panel.webview.asWebviewUri(vscode.Uri.file(context.asAbsolutePath('resources/assets')));
     const template = fs.readFileSync(context.asAbsolutePath(templatePath), 'utf8')
-        .replace(/\{\{mediaUri\}\}/g, mediaUri.toString())
+        .replace(/\{\{mediaUri\}\}/g, resourcesUri.toString())
         .replace(/\{\{stylesUri\}\}/g, stylesUri.toString())
         .replace(/\{\{scriptsUri\}\}/g, scriptsUri.toString())
         .replace(/\{\{assetsUri\}\}/g, assetsUri.toString());
@@ -147,20 +163,43 @@ function createWebviewPanel(context, viewType, title, templatePath) {
                     vscode.commands.executeCommand(message.commandId);
                 }
                 return;
+            case 'saveJournalEntries':
+                if (message.entries) {
+                    context.globalState.update('journalEntries', message.entries);
+                }
+                return;
             case 'getUserData':
                 // Send stored user data to the webview without additional checks
                 const userName = context.globalState.get('userName');
                 const avatar = context.globalState.get('avatar');
+                const journalEntries = context.globalState.get('journalEntries') || [];
                 panel.webview.postMessage({
                     command: 'userData',
                     userName: userName,
-                    avatar: avatar
+                    avatar: avatar,
+                    journalEntries: journalEntries
                 });
                 return;
         }
     }, undefined, context.subscriptions);
     panel.onDidDispose(() => zenjiPanel = undefined, null, context.subscriptions);
     return panel;
+}
+function syncDataToCloud(context) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // Example logic for syncing data
+        const userData = {
+            avatar: context.globalState.get('avatar'),
+            userName: context.globalState.get('userName'),
+            focusStats: context.globalState.get('focusStats'),
+            journalEntries: context.globalState.get('journalEntries'),
+            chatHistory: context.globalState.get('chatHistory'),
+        };
+        // Simulate an API call or cloud upload
+        console.log('Syncing data to cloud:', userData);
+        // Replace this with actual cloud sync logic
+        yield new Promise((resolve) => setTimeout(resolve, 2000));
+    });
 }
 function deactivate() {
     statusBarItem === null || statusBarItem === void 0 ? void 0 : statusBarItem.dispose();

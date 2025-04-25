@@ -1,1 +1,35 @@
+# Dependencies
 node_modules/
+
+# Build directories
+extension/
+out/
+*.vsix
+
+# Environment and secrets
+.env
+.env.local
+.env.*
+
+# VS Code
+.vscode-test/
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/extensions.json
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock

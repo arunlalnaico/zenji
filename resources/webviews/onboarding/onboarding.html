@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Zenji</title>
+    <link rel="stylesheet" href="{{stylesUri}}/main.css">
+    <link rel="stylesheet" href="{{stylesUri}}/components.css">
+    <script>
+        // Create a singleton for VS Code API access
+        const vscodeApi = (() => {
+            let vscode;
+            return () => {
+                if (!vscode) {
+                    vscode = acquireVsCodeApi();
+                }
+                return vscode;
+            };
+        })();
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="welcome-header">
+            <h1>Welcome to Zenji AI</h1>
+            <div class="tagline">Your mindful AI coding companion</div>
+        </div>
+        
+        <div class="onboarding-card">
+            <div class="step-indicator">
+                <div class="step active" id="step-indicator-1"></div>
+                <div class="step" id="step-indicator-2"></div>
+                <div class="step" id="step-indicator-3"></div>
+            </div>
+
+            <!-- Step 1: Name Input -->
+            <div id="step-1" class="step-content active">
+                <h2>Let's get started</h2>
+                <p>Zenji is your AI coding companion designed to help you maintain mental wellness while coding. Let's set up your profile.</p>
+                
+                <div class="form-group">
+                    <label for="userName">What's your name?</label>
+                    <input type="text" id="userName" placeholder="Enter your name" autofocus />
+                </div>
+                
+                <div class="navigation">
+                    <div></div> <!-- Empty div for spacing -->
+                    <button id="next-1" class="btn">Next</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Profile Picture -->
+            <div id="step-2" class="step-content">
+                <h2>Choose a profile picture</h2>
+                
+                <div class="avatar-container">
+                    <div class="avatar">
+                        <img src="{{assetsUri}}/default-avatar.png" alt="Default Avatar" id="avatar-preview" />
+                        <div class="avatar-edit">
+                            <input type="file" id="avatarUpload" accept=".jpg, .jpeg, .png" />
+                            <label for="avatarUpload">📷</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <p class="info-text">Upload a profile picture or use our default avatar</p>
+                
+                <div class="navigation">
+                    <button id="back-2" class="btn btn-secondary">Back</button>
+                    <button id="next-2" class="btn">Next</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Completion -->
+            <div id="step-3" class="step-content">
+                <h2>You're all set!</h2>
+                
+                <div class="profile-preview">
+                    <div class="avatar-container">
+                        <div class="avatar">
+                            <img src="{{assetsUri}}/default-avatar.png" alt="User Avatar" id="final-avatar-preview" />
+                        </div>
+                    </div>
+                    <div class="welcome-message" id="final-welcome-message">Welcome, Friend</div>
+                </div>
+                
+                <p>Zenji is ready to help you maintain focus, track your mood, and support your mental wellness through your coding journey.</p>
+                
+                <div class="navigation">
+                    <button id="back-3" class="btn btn-secondary">Back</button>
+                    <button id="complete" class="btn">Enter Zenji Space</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Use the singleton instead of directly acquiring the API
+            const vscode = vscodeApi();
+            let avatarDataUrl = null;
+            
+            // Step navigation
+            document.getElementById('next-1').addEventListener('click', () => {
+                const userName = document.getElementById('userName').value.trim();
+                if (!userName) {
+                    alert('Please enter your name to continue.');
+                    return;
+                }
+                
+                document.getElementById('step-1').classList.remove('active');
+                document.getElementById('step-2').classList.add('active');
+                document.getElementById('step-indicator-1').classList.remove('active');
+                document.getElementById('step-indicator-2').classList.add('active');
+                
+                // Update welcome message
+                document.getElementById('final-welcome-message').textContent = `Welcome, ${userName}`;
+            });
+            
+            document.getElementById('back-2').addEventListener('click', () => {
+                document.getElementById('step-2').classList.remove('active');
+                document.getElementById('step-1').classList.add('active');
+                document.getElementById('step-indicator-2').classList.remove('active');
+                document.getElementById('step-indicator-1').classList.add('active');
+            });
+            
+            document.getElementById('next-2').addEventListener('click', () => {
+                document.getElementById('step-2').classList.remove('active');
+                document.getElementById('step-3').classList.add('active');
+                document.getElementById('step-indicator-2').classList.remove('active');
+                document.getElementById('step-indicator-3').classList.add('active');
+            });
+            
+            document.getElementById('back-3').addEventListener('click', () => {
+                document.getElementById('step-3').classList.remove('active');
+                document.getElementById('step-2').classList.add('active');
+                document.getElementById('step-indicator-3').classList.remove('active');
+                document.getElementById('step-indicator-2').classList.add('active');
+            });
+            
+            document.getElementById('complete').addEventListener('click', () => {
+                const userName = document.getElementById('userName').value.trim();
+                
+                // Send message using the correct structure that matches extension.ts
+                vscode.postMessage({
+                    command: 'onboardingComplete',
+                    userData: {
+                        userName: userName,
+                        avatar: avatarDataUrl
+                    }
+                });
+            });
+            
+            // Avatar upload
+            document.getElementById('avatarUpload').addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    avatarDataUrl = e.target.result;
+                    document.getElementById('avatar-preview').src = avatarDataUrl;
+                    document.getElementById('final-avatar-preview').src = avatarDataUrl;
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+    </script>
+</body>
+</html>

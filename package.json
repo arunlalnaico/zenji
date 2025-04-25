@@ -2,12 +2,14 @@
     "name": "zenjispace",
     "displayName": "Zenjispace",
     "description": "A mindful AI coding companion webview for VS Code.",
-    "version": "1.2.2",
+    "version": "1.2.3",
     "engines": {
         "vscode": "^1.60.0"
     },
     "activationEvents": [
         "onCommand:zenjispace.open",
+        "onCommand:zenjispace.syncToCloud",
+        "onCommand:zenjispace.syncFromCloud",
         "onStartupFinished"
     ],
     "main": "./extension/extension.js",
@@ -18,8 +20,20 @@
                 "title": "Open Zenjispace"
             },
             {
+                "command": "zenjispace.onboarding",
+                "title": "Zenjispace: Start Onboarding"
+            },
+            {
                 "command": "zenjispace.clearData",
-                "title": "Zenjispace: Clear User Data"
+                "title": "Zenjispace: Clear All Data"
+            },
+            {
+                "command": "zenjispace.syncToCloud",
+                "title": "Zenjispace: Sync Data to Cloud"
+            },
+            {
+                "command": "zenjispace.syncFromCloud",
+                "title": "Zenjispace: Restore Data from Cloud"
             }
         ]
     },
@@ -29,14 +43,16 @@
         "watch": "tsc -watch -p ./",
         "o": "npm run compile && vsce package",
         "package": "vsce package",
-        "build": "npm run compile && npm run package",
-        "uninstall-extension": "code --uninstall-extension zenjispace",
-        "install": "code --install-extension ./zenjispace-1.2.2.vsix",
+        "clean": "node -e \"if(require('fs').existsSync('./out')){require('fs').rmSync('./out',{recursive:true,force:true})}\"",
+        "build": "npm run clean && npm run compile && npm run package",
+        "uninstall-extension": "code --uninstall-extension undefined_publisher.zenjispace",
+        "install": "code --install-extension ./zenjispace-1.2.3.vsix",
         "restart-vscode": "code --reloadWindow",
         "reload-extensions": "code --command workbench.action.developer.reloadWindow",
         "install-and-restart": "npm run install && npm run restart-vscode",
         "install-and-reload": "npm run install && npm run reload-extensions",
-        "r": "npm run build && (npm run uninstall-extension || echo Extension not installed) && npm run install",
+        "debug-commands": "code --install-extension ./zenjispace-1.2.3.vsix && code --list-extensions --show-versions",
+        "r": "npm run build && (npm run uninstall-extension || echo Extension not installed) && npm run install && npm run restart-vscode",
         "r-reload": "npm run build && (npm run uninstall-extension || echo Extension not installed) && npm run install-and-reload"
     },
     "repository": {
@@ -48,5 +64,13 @@
         "typescript": "^4.0.0",
         "@types/node": "^16.18.34",
         "@types/vscode": "^1.60.0"
-    }
+    },
+    "files": [
+        "out",
+        "dist",
+        "src",
+        "LICENSE.md",
+        "README.md",
+        "CHANGELOG.md"
+    ]
 }

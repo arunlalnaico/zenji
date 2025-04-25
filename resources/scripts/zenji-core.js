@@ -162,8 +162,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.userName = message.userName;
                 saveState(state);
             }
+            
+            // Update journal entries if available
+            if (message.journalEntries) {
+                const state = loadState();
+                state.journalEntries = message.journalEntries;
+                saveState(state);
+                
+                // Re-render journal entries if the journal tab exists and is active
+                const journalTab = document.getElementById('journal-tab');
+                const journalEntriesList = document.getElementById('journalEntriesList');
+                
+                if (journalEntriesList) {
+                    renderJournalEntries(message.journalEntries);
+                }
+            }
         }
     });
+
+    // Add event listener for the sync button
+    const syncButton = document.getElementById('syncButton');
+    if (syncButton) {
+        syncButton.addEventListener('click', () => {
+            // Send the sync command to the extension
+            sendMessage('executeCommand', { commandId: 'zenjispace.syncToCloud' });
+        });
+    }
 });
 
 // Functions to set active tabs
@@ -359,26 +383,34 @@ function initializeJournal() {
         };
         
         // Add to entries array
-        journalEntries.unshift(newEntry);
+        const entries = [...journalEntries];
+        entries.unshift(newEntry);
         
         // Save to state
-        state.journalEntries = journalEntries;
+        state.journalEntries = entries;
         saveState(state);
         
         // Clear input
         journalEntry.value = '';
         
         // Re-render entries
-        renderJournalEntries(journalEntries);
+        renderJournalEntries(entries);
         
-        // Notify extension
-        sendMessage('saveJournalEntry', { entry: newEntry });
+        // Send to extension for permanent storage
+        sendMessage('saveJournalEntries', { entries: entries });
     });
     
+    // Add a helper function to expose renderJournalEntries globally
+    window.renderJournalEntries = function(entries) {
+        renderJournalEntries(entries);
+    };
+    
     function renderJournalEntries(entries) {
+        if (!journalEntriesList) return; // Guard against element not existing
+        
         journalEntriesList.innerHTML = '';
         
-        if (entries.length === 0) {
+        if (!entries || entries.length === 0) {
             journalEntriesList.innerHTML = '<p>No journal entries yet. Start writing your thoughts!</p>';
             return;
         }

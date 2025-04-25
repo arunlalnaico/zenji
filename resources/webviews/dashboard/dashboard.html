@@ -6,6 +6,18 @@
     <title>Zenjispace</title>
     <link rel="stylesheet" href="{{stylesUri}}/main.css">
     <link rel="stylesheet" href="{{stylesUri}}/components.css">
+    <script>
+        // Create a singleton for VS Code API access
+        const vscodeApi = (() => {
+            let vscode;
+            return () => {
+                if (!vscode) {
+                    vscode = acquireVsCodeApi();
+                }
+                return vscode;
+            };
+        })();
+    </script>
 </head>
 <body>
     <div class="container" id="dashboard-container">
@@ -38,6 +50,20 @@
                     <span class="close">&times;</span>
                 </div>
                 <div class="modal-body">
+                    <div class="settings-section">
+                        <h3>Cloud Sync</h3>
+                        <div class="settings-option">
+                            <p>Sync your profile, journal entries, and settings across devices.</p>
+                            <div class="button-group">
+                                <button id="syncToCloudBtn" class="btn">Sync to Cloud</button>
+                                <button id="syncFromCloudBtn" class="btn btn-secondary">Restore from Cloud</button>
+                            </div>
+                            <div id="syncStatus" class="sync-status">
+                                <span>Last synced: Never</span>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="settings-section">
                         <h3>Data Management</h3>
                         <div class="settings-option">
@@ -192,7 +218,8 @@
     <script>
         // Initialize the dashboard with user data
         document.addEventListener('DOMContentLoaded', () => {
-            const vscode = acquireVsCodeApi();
+            // Use the singleton instead of directly acquiring the API
+            const vscode = vscodeApi();
             
             // Simply request user data from extension
             vscode.postMessage({ command: 'getUserData' });
@@ -210,6 +237,87 @@
                     if (message.userName) {
                         document.getElementById('welcome-message').textContent = `Welcome back, ${message.userName}`;
                     }
+                    
+                    // Initialize journal entries if available
+                    if (message.journalEntries) {
+                        const state = loadState();
+                        state.journalEntries = message.journalEntries;
+                        saveState(state);
+                    }
+                }
+            });
+        });
+        
+        // Additional settings modal functionality for sync
+        document.addEventListener('DOMContentLoaded', () => {
+            const syncToCloudBtn = document.getElementById('syncToCloudBtn');
+            const syncFromCloudBtn = document.getElementById('syncFromCloudBtn');
+            const syncStatus = document.getElementById('syncStatus');
+            
+            // Get last sync time from state
+            const state = loadState();
+            if (state.lastCloudSync) {
+                try {
+                    const syncDate = new Date(state.lastCloudSync);
+                    syncStatus.innerHTML = `<span>Last synced: ${syncDate.toLocaleString()}</span>`;
+                } catch (e) {
+                    console.error('Error parsing last sync date:', e);
+                }
+            }
+            
+            // Handle sync to cloud button
+            syncToCloudBtn.addEventListener('click', () => {
+                syncToCloudBtn.disabled = true;
+                syncToCloudBtn.textContent = 'Syncing...';
+                syncStatus.innerHTML = `<span>Syncing... <svg class="sync-loader" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="20" height="20" fill="none" stroke="currentColor" stroke-width="8"><circle cx="50" cy="50" r="40" stroke-opacity="0.3"/><path d="M50 10 a40 40 0 0 1 0 80" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="1s" repeatCount="indefinite"/></path></svg></span>`;
+                sendMessage('syncToCloud');
+            });
+            
+            // Handle restore from cloud button
+            syncFromCloudBtn.addEventListener('click', () => {
+                if (confirm('This will replace your current data with data from the cloud. Continue?')) {
+                    syncFromCloudBtn.disabled = true;
+                    syncFromCloudBtn.textContent = 'Restoring...';
+                    sendMessage('syncFromCloud');
+                }
+            });
+            
+            // Listen for sync complete message
+            window.addEventListener('message', event => {
+                const message = event.data;
+                
+                if (message.command === 'syncComplete') {
+                    syncToCloudBtn.disabled = false;
+                    syncToCloudBtn.textContent = 'Sync to Cloud';
+                    
+                    syncFromCloudBtn.disabled = false;
+                    syncFromCloudBtn.textContent = 'Restore from Cloud';
+                    
+                    if (message.success) {
+                        const now = new Date();
+                        syncStatus.innerHTML = `<span>Last synced: ${now.toLocaleString()}</span>`;
+                        
+                        // Save the last sync time in local state
+                        const state = loadState();
+                        state.lastCloudSync = now.toISOString();
+                        saveState(state);
+                        
+                        // Refresh the data on the page
+                        sendMessage('getUserData');
+                    } else {
+                        syncStatus.innerHTML = `<span class="sync-error">Sync failed: ${message.error || 'Unknown error'}</span>`;
+                        console.error('Sync failed:', message.error);
+                    }
+                } else if (message.command === 'syncTimeout') {
+                    // Handle sync timeout
+                    syncToCloudBtn.disabled = false;
+                    syncToCloudBtn.textContent = 'Sync to Cloud';
+                    
+                    syncFromCloudBtn.disabled = false;
+                    syncFromCloudBtn.textContent = 'Restore from Cloud';
+                    
+                    syncStatus.innerHTML = `<span class="sync-error">Sync timed out. Please try again.</span>`;
+                    console.error('Sync timed out');
                 }
             });
         });
