@@ -18,6 +18,92 @@
             };
         })();
     </script>
+    <style>
+        /* GitHub authentication styles */
+        .github-profile {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+        }
+        
+        .github-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .github-name {
+            font-weight: 500;
+            margin-bottom: 3px;
+        }
+        
+        .github-login {
+            opacity: 0.7;
+            font-size: 0.9em;
+        }
+        
+        /* Add a badge to show sync-enabled status */
+        .sync-badge {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 0.7em;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        
+        .or-divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .or-divider::before,
+        .or-divider::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid var(--card-border);
+        }
+        
+        .or-divider span {
+            margin: 0 10px;
+            opacity: 0.7;
+            font-size: 0.9em;
+        }
+        
+        .github-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #24292e;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .github-button:hover {
+            background-color: #2f363d;
+        }
+        
+        .github-icon {
+            margin-right: 10px;
+        }
+        
+        .github-info {
+            margin-top: 15px;
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -86,6 +172,40 @@
                 
                 <p>Zenji is ready to help you maintain focus, track your mood, and support your mental wellness through your coding journey.</p>
                 
+                <div class="github-section">
+                    <h3>Connect with GitHub</h3>
+                    <p>Sign in with GitHub to sync your Zenji profile across multiple devices.</p>
+                    
+                    <div id="github-status">
+                        <div id="github-not-connected" style="display: block;">
+                            <button id="githubLoginBtn" class="github-button">
+                                <span class="github-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.387.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.73.083-.73 1.205.085 1.838 1.236 1.838 1.236 1.07 1.835 2.807 1.305 3.492.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.468-2.38 1.235-3.22-.124-.303-.535-1.524.118-3.176 0 0 1.006-.322 3.3 1.23.96-.267 1.98-.4 3-.405 1.02.005 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.655 1.65.245 2.873.12 3.176.77.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.43.37.815 1.103.815 2.223 0 1.605-.015 2.9-.015 3.3 0 .32.217.695.825.577C20.565 21.795 24 17.298 24 12c0-6.63-5.37-12-12-12z"/>
+                                    </svg>
+                                </span>
+                                Sign in with GitHub
+                            </button>
+                            <p class="github-info">Signing in with GitHub enables cloud sync for your profile data.</p>
+                        </div>
+                        
+                        <div id="github-connected" style="display: none;">
+                            <div class="github-profile">
+                                <img id="github-avatar" src="" alt="GitHub Avatar" class="github-avatar" />
+                                <div>
+                                    <div id="github-name" class="github-name"></div>
+                                    <div id="github-login" class="github-login"></div>
+                                </div>
+                            </div>
+                            <p>Your Zenji profile will be synced across devices.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="or-divider">
+                        <span>OR</span>
+                    </div>
+                </div>
+                
                 <div class="navigation">
                     <button id="back-3" class="btn btn-secondary">Back</button>
                     <button id="complete" class="btn">Enter Zenji Space</button>
@@ -99,6 +219,8 @@
             // Use the singleton instead of directly acquiring the API
             const vscode = vscodeApi();
             let avatarDataUrl = null;
+            let githubAuthenticated = false;
+            let githubUserInfo = null;
             
             // Step navigation
             document.getElementById('next-1').addEventListener('click', () => {
@@ -146,9 +268,60 @@
                     command: 'onboardingComplete',
                     userData: {
                         userName: userName,
-                        avatar: avatarDataUrl
+                        avatar: avatarDataUrl,
+                        githubAuthenticated: githubAuthenticated,
+                        githubUser: githubUserInfo
                     }
                 });
+            });
+            
+            // GitHub login button
+            document.getElementById('githubLoginBtn').addEventListener('click', () => {
+                // Request GitHub login from the extension
+                vscode.postMessage({
+                    command: 'githubLogin'
+                });
+            });
+            
+            // Listen for messages from the extension
+            window.addEventListener('message', event => {
+                const message = event.data;
+                
+                if (message.command === 'authStatus') {
+                    // Update GitHub authentication status
+                    githubAuthenticated = message.isAuthenticated;
+                    
+                    if (message.isAuthenticated && message.githubUser) {
+                        // Store GitHub user info
+                        githubUserInfo = message.githubUser;
+                        
+                        // Update UI to show connected state
+                        document.getElementById('github-not-connected').style.display = 'none';
+                        document.getElementById('github-connected').style.display = 'block';
+                        
+                        // Set GitHub profile information
+                        document.getElementById('github-avatar').src = message.githubUser.avatarUrl;
+                        document.getElementById('github-name').textContent = message.githubUser.name;
+                        document.getElementById('github-login').textContent = '@' + message.githubUser.login;
+                        
+                        // Update welcome message with sync badge if not already present
+                        const welcomeMessage = document.getElementById('final-welcome-message');
+                        if (!welcomeMessage.querySelector('.sync-badge')) {
+                            welcomeMessage.innerHTML += ' <span class="sync-badge">Sync Enabled</span>';
+                        }
+                    } else {
+                        // Update UI to show not connected state
+                        document.getElementById('github-not-connected').style.display = 'block';
+                        document.getElementById('github-connected').style.display = 'none';
+                        
+                        // Remove sync badge if present
+                        const welcomeMessage = document.getElementById('final-welcome-message');
+                        const syncBadge = welcomeMessage.querySelector('.sync-badge');
+                        if (syncBadge) {
+                            welcomeMessage.removeChild(syncBadge);
+                        }
+                    }
+                }
             });
             
             // Avatar upload
@@ -163,6 +336,11 @@
                     document.getElementById('final-avatar-preview').src = avatarDataUrl;
                 };
                 reader.readAsDataURL(file);
+            });
+            
+            // Check for existing GitHub authentication when the page loads
+            vscode.postMessage({
+                command: 'checkGitHubAuth'
             });
         });
     </script>

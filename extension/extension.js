@@ -37,13 +37,24 @@ const vscode = __importStar(require("vscode"));
 const fs = __importStar(require("fs"));
 let zenjiPanel;
 let statusBarItem;
+let authStatusBarItem;
+// Define session token to check if the user is authenticated
+let session;
 function activate(context) {
+    // Initialize main Zenji status bar item
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     statusBarItem.text = "$(zen) Zenji AI";
     statusBarItem.tooltip = "Open Zenjispace - Your mindful AI coding companion";
     statusBarItem.command = 'zenjispace.open';
     statusBarItem.show();
     context.subscriptions.push(statusBarItem);
+    // Initialize auth status bar item
+    authStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99);
+    updateAuthStatusBarItem();
+    authStatusBarItem.show();
+    context.subscriptions.push(authStatusBarItem);
+    // Check for existing auth session
+    checkForExistingSession(context);
     const isFirstRun = context.globalState.get('zenjiFirstRun', true);
     const onboardingComplete = context.globalState.get('onboardingComplete', false);
     if (isFirstRun) {
@@ -55,6 +66,7 @@ function activate(context) {
             openZenjiOnboarding(context);
         }
     }
+    // Register all commands
     context.subscriptions.push(vscode.commands.registerCommand('zenjispace.open', () => {
         if (context.globalState.get('onboardingComplete', false)) {
             openZenjiDashboard(context);
@@ -73,9 +85,18 @@ function activate(context) {
         openZenjiDashboard(context);
     })), vscode.commands.registerCommand('zenjispace.syncToCloud', () => __awaiter(this, void 0, void 0, function* () {
         try {
+            // Check if user is authenticated before syncing
+            if (!session) {
+                const shouldLogin = yield vscode.window.showInformationMessage('You need to sign in with GitHub to sync your data across devices.', 'Sign in with GitHub', 'Cancel');
+                if (shouldLogin === 'Sign in with GitHub') {
+                    yield vscode.commands.executeCommand('zenjispace.login');
+                    return;
+                }
+                else {
+                    return;
+                }
+            }
             vscode.window.showInformationMessage('Syncing Zenjispace data to the cloud...');
-            // Add your cloud sync logic here
-            // Example: Call an API or upload data to a cloud storage
             yield syncDataToCloud(context);
             vscode.window.showInformationMessage('Zenjispace data synced successfully!');
         }
@@ -87,6 +108,59 @@ function activate(context) {
                 vscode.window.showErrorMessage('Failed to sync data: Unknown error occurred.');
             }
         }
+    })), 
+    // New command to handle GitHub authentication
+    vscode.commands.registerCommand('zenjispace.login', () => __awaiter(this, void 0, void 0, function* () {
+        yield loginWithGitHub(context);
+    })), vscode.commands.registerCommand('zenjispace.logout', () => __awaiter(this, void 0, void 0, function* () {
+        yield logoutFromGitHub(context);
+    })), vscode.commands.registerCommand('zenjispace.syncFromCloud', () => __awaiter(this, void 0, void 0, function* () {
+        try {
+            // Check if user is authenticated before retrieving data
+            if (!session) {
+                const shouldLogin = yield vscode.window.showInformationMessage('You need to sign in with GitHub to retrieve your data from the cloud.', 'Sign in with GitHub', 'Cancel');
+                if (shouldLogin === 'Sign in with GitHub') {
+                    yield vscode.commands.executeCommand('zenjispace.login');
+                    return;
+                }
+                else {
+                    return;
+                }
+            }
+            vscode.window.showInformationMessage('Retrieving Zenjispace data from the cloud...');
+            yield retrieveDataFromCloud(context);
+            vscode.window.showInformationMessage('Zenjispace data retrieved successfully!');
+            // Refresh the dashboard if it's open
+            if (zenjiPanel) {
+                zenjiPanel.webview.postMessage({
+                    command: 'syncComplete',
+                    success: true
+                });
+            }
+        }
+        catch (error) {
+            if (error instanceof Error) {
+                vscode.window.showErrorMessage(`Failed to retrieve data: ${error.message}`);
+            }
+            else {
+                vscode.window.showErrorMessage('Failed to retrieve data: Unknown error occurred.');
+            }
+            // Notify the dashboard of the error
+            if (zenjiPanel) {
+                zenjiPanel.webview.postMessage({
+                    command: 'syncComplete',
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Unknown error occurred'
+                });
+            }
+        }
+    })));
+    // Listen for authentication provider changes
+    context.subscriptions.push(vscode.authentication.onDidChangeSessions((e) => __awaiter(this, void 0, void 0, function* () {
+        if (e.provider.id === 'github') {
+            // Check if the session is still valid
+            yield checkForExistingSession(context);
+        }
     })));
 }
 exports.activate = activate;
@@ -94,7 +168,8 @@ function clearAllData(context) {
     return __awaiter(this, void 0, void 0, function* () {
         const keysToRemove = [
             'avatar', 'userName', 'focusStats', 'journalEntries',
-            'chatHistory', 'sound', 'activeTab', 'activeJournalTab'
+            'chatHistory', 'sound', 'activeTab', 'activeJournalTab',
+            'githubUserId', 'lastSyncedTimestamp'
         ];
         for (const key of keysToRemove) {
             yield context.globalState.update(key, undefined);
@@ -137,6 +212,29 @@ function createWebviewPanel(context, viewType, title, templatePath) {
         .replace(/\{\{scriptsUri\}\}/g, scriptsUri.toString())
         .replace(/\{\{assetsUri\}\}/g, assetsUri.toString());
     panel.webview.html = template;
+    // Store the panel reference
+    zenjiPanel = panel;
+    // Always send authentication status immediately after panel creation
+    // for both dashboard and onboarding
+    getGitHubUserInfo().then(githubUser => {
+        if (panel && panel.visible) {
+            panel.webview.postMessage({
+                command: 'authStatus',
+                isAuthenticated: !!session,
+                githubUser: githubUser
+            });
+        }
+    }).catch(error => {
+        console.error('Failed to get GitHub user info:', error);
+        // Even if we fail to get user info, still notify about auth status
+        if (panel && panel.visible) {
+            panel.webview.postMessage({
+                command: 'authStatus',
+                isAuthenticated: false,
+                githubUser: null
+            });
+        }
+    });
     // Listen for messages from the webview
     panel.webview.onDidReceiveMessage(message => {
         switch (message.command) {
@@ -148,7 +246,38 @@ function createWebviewPanel(context, viewType, title, templatePath) {
                 if (message.userData && message.userData.avatar) {
                     context.globalState.update('avatar', message.userData.avatar);
                 }
+                // If the user authenticated with GitHub during onboarding, store that info
+                if (message.userData && message.userData.githubAuthenticated) {
+                    // The GitHub user ID should already be stored from the authentication process
+                    // So we don't need to store it again here
+                }
                 openZenjiDashboard(context);
+                return;
+            case 'githubLogin':
+                // Handle GitHub login request from onboarding
+                vscode.commands.executeCommand('zenjispace.login');
+                return;
+            case 'checkGitHubAuth':
+                // Check if the user is already authenticated with GitHub
+                getGitHubUserInfo().then(githubUser => {
+                    if (panel && panel.visible) {
+                        panel.webview.postMessage({
+                            command: 'authStatus',
+                            isAuthenticated: !!session,
+                            githubUser: githubUser
+                        });
+                    }
+                }).catch(error => {
+                    console.error('Failed to get GitHub user info during onboarding:', error);
+                    // Even if we fail to get user info, still notify about auth status
+                    if (panel) {
+                        panel.webview.postMessage({
+                            command: 'authStatus',
+                            isAuthenticated: false,
+                            githubUser: null
+                        });
+                    }
+                });
                 return;
             case 'updateProfile':
                 if (message.avatar) {
@@ -187,18 +316,245 @@ function createWebviewPanel(context, viewType, title, templatePath) {
 }
 function syncDataToCloud(context) {
     return __awaiter(this, void 0, void 0, function* () {
-        // Example logic for syncing data
-        const userData = {
-            avatar: context.globalState.get('avatar'),
-            userName: context.globalState.get('userName'),
-            focusStats: context.globalState.get('focusStats'),
-            journalEntries: context.globalState.get('journalEntries'),
-            chatHistory: context.globalState.get('chatHistory'),
-        };
-        // Simulate an API call or cloud upload
-        console.log('Syncing data to cloud:', userData);
-        // Replace this with actual cloud sync logic
-        yield new Promise((resolve) => setTimeout(resolve, 2000));
+        // First check if user is authenticated
+        if (!session) {
+            throw new Error('User is not authenticated with GitHub');
+        }
+        try {
+            // Get GitHub user ID for unique identification
+            const githubUserId = context.globalState.get('githubUserId');
+            if (!githubUserId) {
+                // If no GitHub user ID is stored, try to fetch it
+                const userId = yield fetchAndStoreGitHubUserId(context);
+                if (!userId) {
+                    throw new Error('Failed to obtain GitHub user ID');
+                }
+            }
+            // Collect user data for sync
+            const userData = {
+                userId: githubUserId,
+                timestamp: new Date().toISOString(),
+                data: {
+                    avatar: context.globalState.get('avatar'),
+                    userName: context.globalState.get('userName'),
+                    focusStats: context.globalState.get('focusStats'),
+                    journalEntries: context.globalState.get('journalEntries'),
+                    chatHistory: context.globalState.get('chatHistory'),
+                    activeTab: context.globalState.get('activeTab'),
+                    activeJournalTab: context.globalState.get('activeJournalTab'),
+                    sound: context.globalState.get('sound')
+                }
+            };
+            // In a real implementation, this would call an API to store the data
+            // For demonstration, we'll log the data and simulate an API call
+            console.log(`Syncing data to cloud for GitHub user ID: ${githubUserId}`, userData);
+            // Simulate an API call to a backend service
+            // Replace this with actual API call to your cloud database 
+            // Example: POST to https://api.zenjispace.com/sync
+            yield new Promise(resolve => setTimeout(resolve, 1500));
+            // Update last synced timestamp
+            yield context.globalState.update('lastSyncedTimestamp', new Date().toISOString());
+            // Notify the webview that sync is complete
+            if (zenjiPanel) {
+                zenjiPanel.webview.postMessage({
+                    command: 'syncComplete',
+                    success: true
+                });
+            }
+            return true;
+        }
+        catch (error) {
+            console.error('Failed to sync data:', error);
+            // Notify the webview that sync failed
+            if (zenjiPanel) {
+                zenjiPanel.webview.postMessage({
+                    command: 'syncComplete',
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Unknown error occurred'
+                });
+            }
+            throw error;
+        }
+    });
+}
+// Retrieve user data from cloud
+function retrieveDataFromCloud(context) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // First check if user is authenticated
+        if (!session) {
+            throw new Error('User is not authenticated with GitHub');
+        }
+        try {
+            // Get GitHub user ID for unique identification
+            const githubUserId = context.globalState.get('githubUserId');
+            if (!githubUserId) {
+                // If no GitHub user ID is stored, try to fetch it
+                const userId = yield fetchAndStoreGitHubUserId(context);
+                if (!userId) {
+                    throw new Error('Failed to obtain GitHub user ID');
+                }
+            }
+            // In a real implementation, this would call an API to retrieve the data
+            // For demonstration, we'll simulate an API call and data retrieval
+            console.log(`Retrieving data from cloud for GitHub user ID: ${githubUserId}`);
+            // Simulate an API call to retrieve data from your backend
+            // Example: GET from https://api.zenjispace.com/sync?userId=${githubUserId}
+            yield new Promise(resolve => setTimeout(resolve, 1500));
+            // This is where you would retrieve actual data from your backend
+            // For now, let's assume we successfully retrieved the data and
+            // it's the same as what's in the local state (just a simulation)
+            // In a real implementation, you would update the local state with the retrieved data
+            // await context.globalState.update('avatar', cloudData.data.avatar);
+            // await context.globalState.update('userName', cloudData.data.userName);
+            // ... update other state items
+            // Update last synced timestamp
+            yield context.globalState.update('lastSyncedTimestamp', new Date().toISOString());
+            return true;
+        }
+        catch (error) {
+            console.error('Failed to retrieve data:', error);
+            throw error;
+        }
+    });
+}
+// Check for existing GitHub authentication session
+function checkForExistingSession(context) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const sessions = yield vscode.authentication.getSession('github', ['user:email', 'read:user'], { createIfNone: false });
+            session = sessions;
+            if (session) {
+                // Store the GitHub user ID for identification
+                yield fetchAndStoreGitHubUserId(context);
+            }
+            // Update status bar item to reflect authentication status
+            updateAuthStatusBarItem();
+            // Notify any open webviews about the authentication status
+            if (zenjiPanel) {
+                zenjiPanel.webview.postMessage({
+                    command: 'authStatus',
+                    isAuthenticated: !!session,
+                    githubUser: session ? yield getGitHubUserInfo() : null
+                });
+            }
+        }
+        catch (error) {
+            console.error('Failed to check for existing GitHub session:', error);
+        }
+    });
+}
+// Update the authentication status bar item
+function updateAuthStatusBarItem() {
+    if (session) {
+        // authStatusBarItem.text = '$(github) GitHub Connected';
+        authStatusBarItem.tooltip = 'Zenji - Click to log out from GitHub';
+        authStatusBarItem.command = 'zenjispace.logout';
+    }
+    else {
+        // authStatusBarItem.text = '$(github) GitHub Sign In';
+        authStatusBarItem.tooltip = 'Zenji - Sign in with GitHub to sync across devices';
+        authStatusBarItem.command = 'zenjispace.login';
+    }
+}
+// Login with GitHub
+function loginWithGitHub(context) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            // Request access to user:email and read:user scopes for basic user identification
+            session = yield vscode.authentication.getSession('github', ['user:email', 'read:user'], { createIfNone: true });
+            if (session) {
+                vscode.window.showInformationMessage('Successfully signed in to GitHub!');
+                // Store the GitHub user ID for identification
+                yield fetchAndStoreGitHubUserId(context);
+                // Update status bar item
+                updateAuthStatusBarItem();
+                // Notify any open webviews about the authentication status
+                if (zenjiPanel) {
+                    zenjiPanel.webview.postMessage({
+                        command: 'authStatus',
+                        isAuthenticated: true,
+                        githubUser: yield getGitHubUserInfo()
+                    });
+                }
+            }
+        }
+        catch (error) {
+            vscode.window.showErrorMessage(`Failed to sign in to GitHub: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    });
+}
+// Logout from GitHub
+function logoutFromGitHub(context) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            // Clear the session
+            session = undefined;
+            // Remove GitHub user ID from state
+            yield context.globalState.update('githubUserId', undefined);
+            // Show confirmation message
+            vscode.window.showInformationMessage('Signed out from GitHub successfully');
+            // Update status bar item
+            updateAuthStatusBarItem();
+            // Notify any open webviews about the authentication status
+            if (zenjiPanel) {
+                zenjiPanel.webview.postMessage({
+                    command: 'authStatus',
+                    isAuthenticated: false,
+                    githubUser: null
+                });
+            }
+        }
+        catch (error) {
+            vscode.window.showErrorMessage(`Failed to sign out from GitHub: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    });
+}
+// Get GitHub user information
+function getGitHubUserInfo() {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (!session) {
+            return null;
+        }
+        try {
+            // Make a request to the GitHub API to get user information
+            const response = yield fetch('https://api.github.com/user', {
+                headers: {
+                    'Authorization': `Bearer ${session.accessToken}`,
+                    'User-Agent': 'Zenjispace-VSCode-Extension'
+                }
+            });
+            if (!response.ok) {
+                throw new Error(`GitHub API returned ${response.status}: ${response.statusText}`);
+            }
+            const userData = yield response.json();
+            return {
+                id: userData.id,
+                login: userData.login,
+                name: userData.name || userData.login,
+                avatarUrl: userData.avatar_url
+            };
+        }
+        catch (error) {
+            console.error('Failed to fetch GitHub user info:', error);
+            return null;
+        }
+    });
+}
+// Fetch and store GitHub user ID
+function fetchAndStoreGitHubUserId(context) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const userInfo = yield getGitHubUserInfo();
+            if (userInfo && userInfo.id) {
+                yield context.globalState.update('githubUserId', userInfo.id.toString());
+                return userInfo.id.toString();
+            }
+            return null;
+        }
+        catch (error) {
+            console.error('Failed to fetch and store GitHub user ID:', error);
+            return null;
+        }
     });
 }
 function deactivate() {

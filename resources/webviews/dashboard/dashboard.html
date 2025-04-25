@@ -18,6 +18,43 @@
             };
         })();
     </script>
+    <style>
+        /* GitHub authentication styles */
+        .github-profile {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+        }
+        
+        .github-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .github-name {
+            font-weight: 500;
+            margin-bottom: 3px;
+        }
+        
+        .github-login {
+            opacity: 0.7;
+            font-size: 0.9em;
+        }
+        
+        /* Add a badge to show sync-enabled status */
+        .sync-badge {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 0.7em;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+    </style>
 </head>
 <body>
     <div class="container" id="dashboard-container">
@@ -50,6 +87,28 @@
                     <span class="close">&times;</span>
                 </div>
                 <div class="modal-body">
+                    <div class="settings-section">
+                        <h3>GitHub Authentication</h3>
+                        <div class="settings-option">
+                            <div id="github-status">
+                                <p id="github-status-message">Sign in with GitHub to enable cloud sync across multiple devices.</p>
+                                <div id="github-user-info" style="display: none;">
+                                    <div class="github-profile">
+                                        <img id="github-avatar" src="" alt="GitHub Avatar" class="github-avatar" />
+                                        <div>
+                                            <div id="github-name" class="github-name"></div>
+                                            <div id="github-login" class="github-login"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="button-group">
+                                <button id="githubLoginBtn" class="btn">Sign in with GitHub</button>
+                                <button id="githubLogoutBtn" class="btn btn-secondary" style="display: none;">Sign Out</button>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="settings-section">
                         <h3>Cloud Sync</h3>
                         <div class="settings-option">
@@ -253,6 +312,76 @@
             const syncToCloudBtn = document.getElementById('syncToCloudBtn');
             const syncFromCloudBtn = document.getElementById('syncFromCloudBtn');
             const syncStatus = document.getElementById('syncStatus');
+            const githubLoginBtn = document.getElementById('githubLoginBtn');
+            const githubLogoutBtn = document.getElementById('githubLogoutBtn');
+            const githubStatusMessage = document.getElementById('github-status-message');
+            const githubUserInfo = document.getElementById('github-user-info');
+            const githubAvatar = document.getElementById('github-avatar');
+            const githubName = document.getElementById('github-name');
+            const githubLogin = document.getElementById('github-login');
+            
+            // Handle GitHub login button
+            githubLoginBtn.addEventListener('click', () => {
+                sendMessage('executeCommand', { commandId: 'zenjispace.login' });
+            });
+            
+            // Handle GitHub logout button
+            githubLogoutBtn.addEventListener('click', () => {
+                sendMessage('executeCommand', { commandId: 'zenjispace.logout' });
+            });
+            
+            // Listen for authentication status messages
+            window.addEventListener('message', event => {
+                const message = event.data;
+                
+                if (message.command === 'authStatus') {
+                    if (message.isAuthenticated && message.githubUser) {
+                        // User is authenticated with GitHub
+                        githubStatusMessage.textContent = 'You are signed in with GitHub. Your data can now be synced across devices.';
+                        
+                        // Show GitHub user info
+                        githubUserInfo.style.display = 'block';
+                        githubAvatar.src = message.githubUser.avatarUrl;
+                        githubName.textContent = message.githubUser.name;
+                        githubLogin.textContent = '@' + message.githubUser.login;
+                        
+                        // Show logout button, hide login button
+                        githubLoginBtn.style.display = 'none';
+                        githubLogoutBtn.style.display = 'inline-block';
+                        
+                        // Update welcome message with sync badge if not already present
+                        const welcomeMessage = document.getElementById('welcome-message');
+                        if (!welcomeMessage.querySelector('.sync-badge')) {
+                            welcomeMessage.innerHTML += ' <span class="sync-badge">Connected</span>';
+                        }
+                        
+                        // Enable sync buttons
+                        syncToCloudBtn.disabled = false;
+                        syncFromCloudBtn.disabled = false;
+                    } else {
+                        // User is not authenticated
+                        githubStatusMessage.textContent = 'Sign in with GitHub to enable cloud sync across multiple devices.';
+                        
+                        // Hide GitHub user info
+                        githubUserInfo.style.display = 'none';
+                        
+                        // Show login button, hide logout button
+                        githubLoginBtn.style.display = 'inline-block';
+                        githubLogoutBtn.style.display = 'none';
+                        
+                        // Remove sync badge if present
+                        const welcomeMessage = document.getElementById('welcome-message');
+                        const syncBadge = welcomeMessage.querySelector('.sync-badge');
+                        if (syncBadge) {
+                            welcomeMessage.removeChild(syncBadge);
+                        }
+                        
+                        // Disable sync buttons
+                        syncToCloudBtn.disabled = true;
+                        syncFromCloudBtn.disabled = true;
+                    }
+                }
+            });
             
             // Get last sync time from state
             const state = loadState();
