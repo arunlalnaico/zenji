@@ -260,6 +260,8 @@ function createWebviewPanel(context, viewType, title, templatePath) {
                     }
                     vscode.window.showInformationMessage(`Welcome to Zenji, ${message.userData.userName}!`);
                 }
+                // Auto-sync after onboarding completes
+                autoSyncData(context);
                 openZenjiDashboard(context);
                 return;
             case 'githubLogin':
@@ -295,6 +297,8 @@ function createWebviewPanel(context, viewType, title, templatePath) {
                 if (message.userName) {
                     context.globalState.update('userName', message.userName);
                 }
+                // Auto-sync after profile update
+                autoSyncData(context);
                 return;
             case 'executeCommand':
                 if (message.commandId) {
@@ -304,6 +308,8 @@ function createWebviewPanel(context, viewType, title, templatePath) {
             case 'saveJournalEntries':
                 if (message.entries) {
                     context.globalState.update('journalEntries', message.entries);
+                    // Auto-sync journal entries
+                    autoSyncData(context);
                 }
                 return;
             case 'getUserData':
@@ -317,6 +323,53 @@ function createWebviewPanel(context, viewType, title, templatePath) {
                     avatar: avatar,
                     journalEntries: journalEntries
                 });
+                return;
+            case 'updateActiveTab':
+                if (message.activeTab) {
+                    context.globalState.update('activeTab', message.activeTab);
+                    // Auto-sync when tab changes
+                    autoSyncData(context);
+                }
+                return;
+            case 'updateActiveJournalTab':
+                if (message.activeJournalTab) {
+                    context.globalState.update('activeJournalTab', message.activeJournalTab);
+                    // Auto-sync when journal tab changes
+                    autoSyncData(context);
+                }
+                return;
+            case 'updateSound':
+                if (message.sound !== undefined) {
+                    context.globalState.update('sound', message.sound);
+                    // Auto-sync when sound preference changes
+                    autoSyncData(context);
+                }
+                return;
+            case 'startFocus':
+            case 'startBreak':
+                const focusStats = context.globalState.get('focusStats') || {
+                    focusCount: 0,
+                    focusMinutes: 0,
+                    breakCount: 0,
+                    moodAvg: '-'
+                };
+                if (message.command === 'startFocus') {
+                    focusStats.focusCount = (focusStats.focusCount || 0) + 1;
+                    focusStats.focusMinutes = (focusStats.focusMinutes || 0) + (message.duration || 25);
+                }
+                else {
+                    focusStats.breakCount = (focusStats.breakCount || 0) + 1;
+                }
+                context.globalState.update('focusStats', focusStats);
+                // Auto-sync when focus stats update
+                autoSyncData(context);
+                return;
+            case 'saveChatMessage':
+                if (message.chatHistory) {
+                    context.globalState.update('chatHistory', message.chatHistory);
+                    // Auto-sync when chat messages are added
+                    autoSyncData(context);
+                }
                 return;
         }
     }, undefined, context.subscriptions);
@@ -588,6 +641,36 @@ function fetchAndStoreGitHubUserId(context) {
         catch (error) {
             console.error('Failed to fetch and store GitHub user ID:', error);
             return null;
+        }
+    });
+}
+// Helper function to automatically sync data after it changes
+function autoSyncData(context, silentMode = true) {
+    return __awaiter(this, void 0, void 0, function* () {
+        // Only sync if the user is authenticated
+        if (!session) {
+            console.log('Auto-sync skipped: User not authenticated with GitHub');
+            return;
+        }
+        try {
+            // Sync data to the cloud
+            yield syncDataToCloud(context);
+            if (!silentMode) {
+                vscode.window.showInformationMessage('Zenjispace data synced successfully!');
+            }
+            return true;
+        }
+        catch (error) {
+            console.error('Auto-sync failed:', error);
+            if (!silentMode) {
+                if (error instanceof Error) {
+                    vscode.window.showErrorMessage(`Auto-sync failed: ${error.message}`);
+                }
+                else {
+                    vscode.window.showErrorMessage('Auto-sync failed: Unknown error occurred.');
+                }
+            }
+            return false;
         }
     });
 }

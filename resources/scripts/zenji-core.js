@@ -42,6 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const state = loadState();
             state.activeTab = tabId;
             saveState(state);
+            
+            // Send tab change to extension for syncing
+            sendMessage('updateActiveTab', { activeTab: tabId });
         });
     });
     
@@ -63,6 +66,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const state = loadState();
             state.activeJournalTab = tabId;
             saveState(state);
+            
+            // Send journal tab change to extension for syncing
+            sendMessage('updateActiveJournalTab', { activeJournalTab: tabId });
         });
     });
     
@@ -296,12 +302,12 @@ function initializeSounds() {
     
     // Sample sound data - in a real app, this might come from the extension
     const sounds = [
-        { id: 'rain', name: 'Rain', description: 'Gentle rainfall', url: 'https://example.com/rain.mp3', icon: '🌧️' },
-        { id: 'forest', name: 'Forest', description: 'Birds and trees', url: 'https://example.com/forest.mp3', icon: '🌲' },
-        { id: 'waves', name: 'Ocean Waves', description: 'Calming sea sounds', url: 'https://example.com/waves.mp3', icon: '🌊' },
-        { id: 'cafe', name: 'Café', description: 'Coffee shop ambience', url: 'https://example.com/cafe.mp3', icon: '☕' },
-        { id: 'whitenoise', name: 'White Noise', description: 'Block distractions', url: 'https://example.com/whitenoise.mp3', icon: '🔊' },
-        { id: 'lofi', name: 'Lo-Fi', description: 'Relaxing beats', url: 'https://example.com/lofi.mp3', icon: '🎵' }
+        { id: 'rain', name: 'Rain', description: 'Gentle rainfall', url: '/resources/assets/sounds/rain.mp3', icon: '🌧️' },
+        { id: 'forest', name: 'Forest', description: 'Birds and trees', url: '/resources/assets/sounds/forest.mp3', icon: '🌲' },
+        { id: 'waves', name: 'Ocean Waves', description: 'Calming sea sounds', url: '/resources/assets/sounds/waves.mp3', icon: '🌊' },
+        { id: 'cafe', name: 'Café', description: 'Coffee shop ambience', url: '/resources/assets/sounds/cafe.mp3', icon: '☕' },
+        { id: 'whitenoise', name: 'White Noise', description: 'Block distractions', url: '/resources/assets/sounds/whitenoise.mp3', icon: '🔊' },
+        { id: 'lofi', name: 'Lo-Fi', description: 'Relaxing beats', url: '/resources/assets/sounds/lofi.mp3', icon: '🎵' }
     ];
     
     // Load active sound from state
@@ -351,6 +357,9 @@ function initializeSounds() {
             // Save to state
             state.sound = activeSound;
             saveState(state);
+            
+            // Send sound preference to extension for syncing
+            sendMessage('updateSound', { sound: activeSound });
         });
         
         soundsContainer.appendChild(soundCard);
@@ -480,6 +489,9 @@ function initializeChat() {
             // Save to state
             state.chatHistory = chatHistory;
             saveState(state);
+            
+            // Send chat history to extension for syncing
+            sendMessage('saveChatMessage', { chatHistory: chatHistory });
             
             // Scroll to bottom
             chatMessages.scrollTop = chatMessages.scrollHeight;

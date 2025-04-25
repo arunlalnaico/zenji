@@ -46,14 +46,14 @@
         "package": "vsce package",
         "clean": "node -e \"if(require('fs').existsSync('./out')){require('fs').rmSync('./out',{recursive:true,force:true})}\"",
         "build": "npm run clean && npm run compile && npm run package",
-        "uninstall-extension": "code --uninstall-extension arunlals89@gmail.com.zenjispace",
-        "installpkg": "code --install-extension ./zenjispace-1.2.3.vsix",
+        "uninstall-extension": "code --uninstall-extension arunlals89.zenjispace",
+        "installpkg": "code --install-extension zenjispace-1.2.3.vsix",
         "restart-vscode": "code --reloadWindow",
         "reload-extensions": "code --command workbench.action.developer.reloadWindow",
         "install-and-restart": "npm run install && npm run restart-vscode",
         "install-and-reload": "npm run install && npm run reload-extensions",
         "debug-commands": "code --install-extension ./zenjispace-1.2.3.vsix && code --list-extensions --show-versions",
-        "r": "npm run build && (npm run uninstall-extension || echo Extension not installed) && npm run install && npm run restart-vscode",
+        "r": "npm run build && (npm run uninstall-extension || echo Extension not installed) && npm run installpkg && npm run restart-vscode",
         "r-reload": "npm run build && (npm run uninstall-extension || echo Extension not installed) && npm run install-and-reload"
     },
     "repository": {
@@ -64,7 +64,8 @@
     "devDependencies": {
         "@types/node": "^16.18.34",
         "@types/vscode": "^1.60.0",
-        "typescript": "^4.0.0"
+        "typescript": "^4.0.0",
+        "vsce": "^2.15.0"
     },
     "files": [
         "out",
@@ -76,7 +77,6 @@
     ],
     "dependencies": {
         "dotenv": "^16.5.0",
-        "mongodb": "^6.16.0",
-        "vsce": "^2.15.0"
+        "mongodb": "^6.16.0"
     }
 }
