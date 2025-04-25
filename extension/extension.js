@@ -35,12 +35,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
 const vscode = __importStar(require("vscode"));
 const fs = __importStar(require("fs"));
+const mongodb_service_1 = require("./mongodb-service");
 let zenjiPanel;
 let statusBarItem;
 let authStatusBarItem;
 // Define session token to check if the user is authenticated
 let session;
 function activate(context) {
+    // Initialize MongoDB connection
+    (0, mongodb_service_1.initMongoDB)(context).catch(error => {
+        console.error('Failed to initialize MongoDB:', error);
+    });
     // Initialize main Zenji status bar item
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     statusBarItem.text = "$(zen) Zenji AI";
@@ -314,6 +319,7 @@ function createWebviewPanel(context, viewType, title, templatePath) {
     panel.onDidDispose(() => zenjiPanel = undefined, null, context.subscriptions);
     return panel;
 }
+// Sync data to cloud with proper MongoDB initialization handling
 function syncDataToCloud(context) {
     return __awaiter(this, void 0, void 0, function* () {
         // First check if user is authenticated
@@ -332,7 +338,6 @@ function syncDataToCloud(context) {
             }
             // Collect user data for sync
             const userData = {
-                userId: githubUserId,
                 timestamp: new Date().toISOString(),
                 data: {
                     avatar: context.globalState.get('avatar'),
@@ -345,13 +350,13 @@ function syncDataToCloud(context) {
                     sound: context.globalState.get('sound')
                 }
             };
-            // In a real implementation, this would call an API to store the data
-            // For demonstration, we'll log the data and simulate an API call
-            console.log(`Syncing data to cloud for GitHub user ID: ${githubUserId}`, userData);
-            // Simulate an API call to a backend service
-            // Replace this with actual API call to your cloud database 
-            // Example: POST to https://api.zenjispace.com/sync
-            yield new Promise(resolve => setTimeout(resolve, 1500));
+            // Ensure MongoDB is initialized before attempting to save data
+            if (!(0, mongodb_service_1.isMongoDBConnected)()) {
+                console.log('MongoDB not connected. Initializing connection...');
+                yield (0, mongodb_service_1.initMongoDB)(context);
+            }
+            // Save user data to MongoDB
+            yield (0, mongodb_service_1.saveUserDataToMongoDB)(githubUserId, userData);
             // Update last synced timestamp
             yield context.globalState.update('lastSyncedTimestamp', new Date().toISOString());
             // Notify the webview that sync is complete
@@ -394,19 +399,44 @@ function retrieveDataFromCloud(context) {
                     throw new Error('Failed to obtain GitHub user ID');
                 }
             }
-            // In a real implementation, this would call an API to retrieve the data
-            // For demonstration, we'll simulate an API call and data retrieval
-            console.log(`Retrieving data from cloud for GitHub user ID: ${githubUserId}`);
-            // Simulate an API call to retrieve data from your backend
-            // Example: GET from https://api.zenjispace.com/sync?userId=${githubUserId}
-            yield new Promise(resolve => setTimeout(resolve, 1500));
-            // This is where you would retrieve actual data from your backend
-            // For now, let's assume we successfully retrieved the data and
-            // it's the same as what's in the local state (just a simulation)
-            // In a real implementation, you would update the local state with the retrieved data
-            // await context.globalState.update('avatar', cloudData.data.avatar);
-            // await context.globalState.update('userName', cloudData.data.userName);
-            // ... update other state items
+            // Ensure MongoDB is initialized before attempting to retrieve data
+            if (!(0, mongodb_service_1.isMongoDBConnected)()) {
+                console.log('MongoDB not connected. Initializing connection...');
+                yield (0, mongodb_service_1.initMongoDB)(context);
+            }
+            // Retrieve data from MongoDB
+            const cloudData = yield (0, mongodb_service_1.getUserDataFromMongoDB)(githubUserId);
+            if (!cloudData) {
+                throw new Error('No data found in cloud for this user');
+            }
+            // Update local state with retrieved data
+            if (cloudData.data) {
+                // Update user data in VS Code global state
+                if (cloudData.data.avatar) {
+                    yield context.globalState.update('avatar', cloudData.data.avatar);
+                }
+                if (cloudData.data.userName) {
+                    yield context.globalState.update('userName', cloudData.data.userName);
+                }
+                if (cloudData.data.focusStats) {
+                    yield context.globalState.update('focusStats', cloudData.data.focusStats);
+                }
+                if (cloudData.data.journalEntries) {
+                    yield context.globalState.update('journalEntries', cloudData.data.journalEntries);
+                }
+                if (cloudData.data.chatHistory) {
+                    yield context.globalState.update('chatHistory', cloudData.data.chatHistory);
+                }
+                if (cloudData.data.activeTab) {
+                    yield context.globalState.update('activeTab', cloudData.data.activeTab);
+                }
+                if (cloudData.data.activeJournalTab) {
+                    yield context.globalState.update('activeJournalTab', cloudData.data.activeJournalTab);
+                }
+                if (cloudData.data.sound) {
+                    yield context.globalState.update('sound', cloudData.data.sound);
+                }
+            }
             // Update last synced timestamp
             yield context.globalState.update('lastSyncedTimestamp', new Date().toISOString());
             return true;
@@ -559,5 +589,10 @@ function fetchAndStoreGitHubUserId(context) {
 }
 function deactivate() {
     statusBarItem === null || statusBarItem === void 0 ? void 0 : statusBarItem.dispose();
+    authStatusBarItem === null || authStatusBarItem === void 0 ? void 0 : authStatusBarItem.dispose();
+    // Close MongoDB connection
+    (0, mongodb_service_1.closeMongoDB)().catch(error => {
+        console.error('Failed to close MongoDB connection:', error);
+    });
 }
 exports.deactivate = deactivate;

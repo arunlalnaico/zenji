@@ -62,9 +62,9 @@
     },
     "license": "MIT",
     "devDependencies": {
-        "typescript": "^4.0.0",
         "@types/node": "^16.18.34",
-        "@types/vscode": "^1.60.0"
+        "@types/vscode": "^1.60.0",
+        "typescript": "^4.0.0"
     },
     "files": [
         "out",
@@ -73,5 +73,9 @@
         "LICENSE.md",
         "README.md",
         "CHANGELOG.md"
-    ]
+    ],
+    "dependencies": {
+        "dotenv": "^16.5.0",
+        "mongodb": "^6.16.0"
+    }
 }

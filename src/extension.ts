@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import { initMongoDB, saveUserDataToMongoDB, getUserDataFromMongoDB, closeMongoDB, isMongoDBConnected } from './mongodb-service';
 
 let zenjiPanel: vscode.WebviewPanel | undefined;
 let statusBarItem: vscode.StatusBarItem;
@@ -8,6 +9,11 @@ let authStatusBarItem: vscode.StatusBarItem;
 let session: vscode.AuthenticationSession | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
+    // Initialize MongoDB connection
+    initMongoDB(context).catch(error => {
+        console.error('Failed to initialize MongoDB:', error);
+    });
+    
     // Initialize main Zenji status bar item
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     statusBarItem.text = "$(zen) Zenji AI";
@@ -327,6 +333,7 @@ function createWebviewPanel(context: vscode.ExtensionContext, viewType: string, 
     return panel;
 }
 
+// Sync data to cloud with proper MongoDB initialization handling
 async function syncDataToCloud(context: vscode.ExtensionContext) {
     // First check if user is authenticated
     if (!session) {
@@ -346,7 +353,6 @@ async function syncDataToCloud(context: vscode.ExtensionContext) {
         
         // Collect user data for sync
         const userData = {
-            userId: githubUserId,
             timestamp: new Date().toISOString(),
             data: {
                 avatar: context.globalState.get('avatar'),
@@ -360,14 +366,14 @@ async function syncDataToCloud(context: vscode.ExtensionContext) {
             }
         };
 
-        // In a real implementation, this would call an API to store the data
-        // For demonstration, we'll log the data and simulate an API call
-        console.log(`Syncing data to cloud for GitHub user ID: ${githubUserId}`, userData);
-        
-        // Simulate an API call to a backend service
-        // Replace this with actual API call to your cloud database 
-        // Example: POST to https://api.zenjispace.com/sync
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Ensure MongoDB is initialized before attempting to save data
+        if (!isMongoDBConnected()) {
+            console.log('MongoDB not connected. Initializing connection...');
+            await initMongoDB(context);
+        }
+
+        // Save user data to MongoDB
+        await saveUserDataToMongoDB(githubUserId as string, userData);
         
         // Update last synced timestamp
         await context.globalState.update('lastSyncedTimestamp', new Date().toISOString());
@@ -415,22 +421,54 @@ async function retrieveDataFromCloud(context: vscode.ExtensionContext) {
             }
         }
         
-        // In a real implementation, this would call an API to retrieve the data
-        // For demonstration, we'll simulate an API call and data retrieval
-        console.log(`Retrieving data from cloud for GitHub user ID: ${githubUserId}`);
+        // Ensure MongoDB is initialized before attempting to retrieve data
+        if (!isMongoDBConnected()) {
+            console.log('MongoDB not connected. Initializing connection...');
+            await initMongoDB(context);
+        }
         
-        // Simulate an API call to retrieve data from your backend
-        // Example: GET from https://api.zenjispace.com/sync?userId=${githubUserId}
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Retrieve data from MongoDB
+        const cloudData = await getUserDataFromMongoDB(githubUserId as string);
         
-        // This is where you would retrieve actual data from your backend
-        // For now, let's assume we successfully retrieved the data and
-        // it's the same as what's in the local state (just a simulation)
+        if (!cloudData) {
+            throw new Error('No data found in cloud for this user');
+        }
         
-        // In a real implementation, you would update the local state with the retrieved data
-        // await context.globalState.update('avatar', cloudData.data.avatar);
-        // await context.globalState.update('userName', cloudData.data.userName);
-        // ... update other state items
+        // Update local state with retrieved data
+        if (cloudData.data) {
+            // Update user data in VS Code global state
+            if (cloudData.data.avatar) {
+                await context.globalState.update('avatar', cloudData.data.avatar);
+            }
+            
+            if (cloudData.data.userName) {
+                await context.globalState.update('userName', cloudData.data.userName);
+            }
+            
+            if (cloudData.data.focusStats) {
+                await context.globalState.update('focusStats', cloudData.data.focusStats);
+            }
+            
+            if (cloudData.data.journalEntries) {
+                await context.globalState.update('journalEntries', cloudData.data.journalEntries);
+            }
+            
+            if (cloudData.data.chatHistory) {
+                await context.globalState.update('chatHistory', cloudData.data.chatHistory);
+            }
+            
+            if (cloudData.data.activeTab) {
+                await context.globalState.update('activeTab', cloudData.data.activeTab);
+            }
+            
+            if (cloudData.data.activeJournalTab) {
+                await context.globalState.update('activeJournalTab', cloudData.data.activeJournalTab);
+            }
+            
+            if (cloudData.data.sound) {
+                await context.globalState.update('sound', cloudData.data.sound);
+            }
+        }
         
         // Update last synced timestamp
         await context.globalState.update('lastSyncedTimestamp', new Date().toISOString());
@@ -591,4 +629,10 @@ async function fetchAndStoreGitHubUserId(context: vscode.ExtensionContext) {
 
 export function deactivate() {
     statusBarItem?.dispose();
+    authStatusBarItem?.dispose();
+    
+    // Close MongoDB connection
+    closeMongoDB().catch(error => {
+        console.error('Failed to close MongoDB connection:', error);
+    });
 }
