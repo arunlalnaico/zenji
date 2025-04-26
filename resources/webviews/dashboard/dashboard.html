@@ -85,6 +85,29 @@
             font-size: 0.9em;
             padding: 5px 10px;
         }
+        
+        /* Pagination controls styles */
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 15px;
+            padding: 10px 0;
+            gap: 10px;
+        }
+        
+        #pageIndicator {
+            min-width: 100px;
+            text-align: center;
+            font-size: 0.9em;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+        
+        .pagination-controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -278,6 +301,12 @@
                         <h3>Recent Entries</h3>
                         <div class="journal-entries" id="journalEntriesList">
                             <!-- Journal entries will be dynamically added here -->
+                        </div>
+                        <!-- Journal pagination controls -->
+                        <div class="pagination-controls" id="journalPagination">
+                            <button id="prevPage" class="btn btn-small">Previous</button>
+                            <span id="pageIndicator">Page 1 of 1</span>
+                            <button id="nextPage" class="btn btn-small">Next</button>
                         </div>
                     </div>
                     

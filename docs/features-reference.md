@@ -227,6 +227,54 @@ The UI adapts to different VS Code window sizes:
 - Scrollable containers for overflow content
 - Tab-based navigation to maximize space usage
 
+## 🔗 Integration and Connectivity
+
+Zenji integrates with various tools in the developer workflow:
+
+### VS Code Integration Enhancements
+- Status bar indicator showing current focus/break state with quick access
+- Optional inline code comments for emotional state or mindfulness notes
+- Integration with Git to suggest breaks after complex merges or long coding sessions
+
+Implementation:
+- Status bar items with dynamic text and tooltips
+- Custom VS Code comment decorations for code segment emotions
+- Git API hooks for detecting challenging coding sessions
+
+### External Service Integrations
+- Spotify integration for personalized focus playlists
+- Calendar sync to schedule focus blocks and breaks
+- Optional sync with health apps for holistic wellness tracking
+
+Implementation:
+- OAuth authentication flow for third-party services
+- API wrappers for service communication
+- Secure token storage using VS Code secrets API
+
+## 💎 Premium Business Model
+
+Zenji offers tiered access to features:
+
+### Zenji Pro Tier
+- Freemium model with basic features available to all
+- Pro subscription with advanced AI features and premium soundscapes
+- Team licenses for development teams to promote collective wellbeing
+
+Implementation:
+- License verification system
+- Feature gating based on subscription status
+- Team admin dashboard for license management
+
+### Enterprise Wellness Features
+- Team dashboard for managers to monitor aggregate wellness metrics
+- Anonymous team insights to identify periods of high stress
+- Custom corporate relaxation exercises and team mindfulness sessions
+
+Implementation:
+- Secure aggregation of anonymized wellness data
+- Team-wide statistics and trend analysis
+- Custom content delivery based on organizational needs
+
 ## 🚧 Future Development Areas
 
 Based on the current implementation, these areas are prepared for future development:

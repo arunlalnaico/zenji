@@ -552,13 +552,51 @@ function initializeJournal() {
     const journalEntry = document.getElementById('journalEntry');
     const saveJournalBtn = document.getElementById('saveJournal');
     const journalEntriesList = document.getElementById('journalEntriesList');
+    const prevPageBtn = document.getElementById('prevPage');
+    const nextPageBtn = document.getElementById('nextPage');
+    const pageIndicator = document.getElementById('pageIndicator');
+    
+    // Pagination variables
+    const ENTRIES_PER_PAGE = 5;
+    let currentPage = 1;
     
     // Load journal entries from state
     const state = loadState();
     let journalEntries = state.journalEntries || [];
     
-    // Display existing entries
-    renderJournalEntries(journalEntries);
+    // Initialize pagination state if not exists
+    if (!state.journalCurrentPage) {
+        state.journalCurrentPage = 1;
+        saveState(state);
+    } else {
+        currentPage = state.journalCurrentPage;
+    }
+    
+    // Display existing entries with pagination
+    renderJournalEntries(journalEntries, currentPage);
+    updatePaginationControls(journalEntries, currentPage);
+    
+    // Handle pagination button clicks
+    prevPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            state.journalCurrentPage = currentPage;
+            saveState(state);
+            renderJournalEntries(journalEntries, currentPage);
+            updatePaginationControls(journalEntries, currentPage);
+        }
+    });
+    
+    nextPageBtn.addEventListener('click', () => {
+        const totalPages = Math.ceil(journalEntries.length / ENTRIES_PER_PAGE);
+        if (currentPage < totalPages) {
+            currentPage++;
+            state.journalCurrentPage = currentPage;
+            saveState(state);
+            renderJournalEntries(journalEntries, currentPage);
+            updatePaginationControls(journalEntries, currentPage);
+        }
+    });
     
     // Save journal entry
     saveJournalBtn.addEventListener('click', () => {
@@ -581,6 +619,10 @@ function initializeJournal() {
         
         // Save to state
         currentState.journalEntries = updatedEntries;
+        
+        // Reset to first page when adding a new entry
+        currentPage = 1;
+        currentState.journalCurrentPage = currentPage;
         saveState(currentState);
         
         // Update our local reference
@@ -589,8 +631,9 @@ function initializeJournal() {
         // Clear input
         journalEntry.value = '';
         
-        // Re-render entries
-        renderJournalEntries(updatedEntries);
+        // Re-render entries with pagination
+        renderJournalEntries(updatedEntries, currentPage);
+        updatePaginationControls(updatedEntries, currentPage);
         
         // Send to extension for permanent storage - ensure we're sending ALL entries
         sendMessage('saveJournalEntries', { entries: updatedEntries });
@@ -598,18 +641,42 @@ function initializeJournal() {
     
     // Add a helper function to expose renderJournalEntries globally
     window.renderJournalEntries = function(entries) {
-        renderJournalEntries(entries);
-        
-        // Also update our local reference and state when entries are updated externally
-        if (entries) {
+        // Reset to first page when receiving new entries from sync
+        if (entries && entries.length > 0) {
+            currentPage = 1;
             const currentState = loadState();
             currentState.journalEntries = entries;
+            currentState.journalCurrentPage = currentPage;
             saveState(currentState);
             journalEntries = entries;
         }
+        
+        renderJournalEntries(entries, currentPage);
+        updatePaginationControls(entries, currentPage);
     };
     
-    function renderJournalEntries(entries) {
+    // Update pagination controls based on current page and total pages
+    function updatePaginationControls(entries, page) {
+        const totalEntries = entries?.length || 0;
+        const totalPages = Math.ceil(totalEntries / ENTRIES_PER_PAGE);
+        
+        // Update page indicator text
+        pageIndicator.textContent = `Page ${page} of ${totalPages || 1}`;
+        
+        // Disable/enable previous button
+        prevPageBtn.disabled = page <= 1;
+        
+        // Disable/enable next button
+        nextPageBtn.disabled = page >= totalPages || totalPages === 0;
+        
+        // Hide pagination controls if there's only one page or less
+        const paginationControls = document.getElementById('journalPagination');
+        if (paginationControls) {
+            paginationControls.style.display = totalPages <= 1 ? 'none' : 'flex';
+        }
+    }
+    
+    function renderJournalEntries(entries, page) {
         if (!journalEntriesList) return; // Guard against element not existing
         
         journalEntriesList.innerHTML = '';
@@ -619,7 +686,13 @@ function initializeJournal() {
             return;
         }
         
-        entries.slice(0, 5).forEach(entry => {
+        // Calculate start and end indices for the current page
+        const startIndex = (page - 1) * ENTRIES_PER_PAGE;
+        const endIndex = Math.min(startIndex + ENTRIES_PER_PAGE, entries.length);
+        
+        // Display only the entries for the current page
+        for (let i = startIndex; i < endIndex; i++) {
+            const entry = entries[i];
             const entryElement = document.createElement('div');
             entryElement.classList.add('journal-entry');
             
@@ -632,7 +705,7 @@ function initializeJournal() {
             `;
             
             journalEntriesList.appendChild(entryElement);
-        });
+        }
     }
 }
 

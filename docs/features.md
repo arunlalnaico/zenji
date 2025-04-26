@@ -179,6 +179,28 @@ Detects code frustration patterns (e.g., frequent undo, rapid typing, debug loop
    How to sync: On command of vscode
    What to sync: All available user profile info
 
+🔗 Integration & Connectivity  
+- **VS Code Integration Enhancements**
+  - Status bar indicator showing current focus/break state with quick access
+  - Optional inline code comments for emotional state or mindfulness notes
+  - Integration with Git to suggest breaks after complex merges or long coding sessions
+
+- **External Service Integrations**
+  - Spotify integration for personalized focus playlists
+  - Calendar sync to schedule focus blocks and breaks
+  - Optional sync with health apps for holistic wellness tracking
+
+💎 Premium Business Model  
+- **Zenji Pro Tier**
+  - Freemium model with basic features available to all
+  - Pro subscription with advanced AI features and premium soundscapes
+  - Team licenses for development teams to promote collective wellbeing
+
+- **Enterprise Wellness Features**
+  - Team dashboard for managers to monitor aggregate wellness metrics
+  - Anonymous team insights to identify periods of high stress
+  - Custom corporate relaxation exercises and team mindfulness sessions
+
 
 🛠️ Tech Stack  
 
