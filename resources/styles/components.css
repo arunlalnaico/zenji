@@ -324,6 +324,16 @@
     margin-top: auto;
 }
 
+/* Connected integration state */
+.integration-card.connected {
+    border-color: var(--primary-color);
+    background-color: rgba(106, 115, 193, 0.1);
+}
+
+.integration-card.connected .integration-logo {
+    color: var(--primary-color);
+}
+
 /* Journal */
 .journal-prompt {
     background-color: rgba(106, 115, 193, 0.05);
@@ -563,4 +573,33 @@ textarea {
     font-size: 1.4em;
     font-weight: 500;
     margin-top: 15px;
+}
+
+/* Notifications */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 6px;
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: transform 0.3s, opacity 0.3s;
+}
+
+.notification.success {
+    background: linear-gradient(135deg, #5cb3a7 0%, #41a58e 100%);
+}
+
+.notification.error {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+}
+
+.notification.show {
+    transform: translateY(0);
+    opacity: 1;
 }
