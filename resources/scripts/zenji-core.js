@@ -755,3 +755,114 @@ function initializeChat() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 }
+
+// Initialize modals
+function initializeModals() {
+    // Settings modal functionality
+    const settingsModal = document.getElementById('settingsModal');
+    const settingsBtn = document.getElementById('settingsButton');
+    const settingsClose = settingsModal.querySelector('.close');
+    
+    settingsBtn.addEventListener('click', () => {
+        settingsModal.style.display = 'block';
+    });
+    
+    settingsClose.addEventListener('click', () => {
+        settingsModal.style.display = 'none';
+    });
+    
+    // Integrations modal functionality
+    const integrationsModal = document.getElementById('integrationsModal');
+    const integrationsBtn = document.getElementById('integrationsButton');
+    const integrationsClose = integrationsModal.querySelector('.close');
+    
+    integrationsBtn.addEventListener('click', () => {
+        integrationsModal.style.display = 'block';
+    });
+    
+    integrationsClose.addEventListener('click', () => {
+        integrationsModal.style.display = 'none';
+    });
+    
+    // Close modals when clicking outside
+    window.addEventListener('click', (event) => {
+        if (event.target === settingsModal) {
+            settingsModal.style.display = 'none';
+        }
+        if (event.target === integrationsModal) {
+            integrationsModal.style.display = 'none';
+        }
+    });
+    
+    // Handle integration connect buttons
+    const connectButtons = document.querySelectorAll('.integration-connect-btn');
+    connectButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const service = button.dataset.service;
+            
+            // Store the connection attempt in state
+            const state = loadState();
+            if (!state.integrations) {
+                state.integrations = {};
+            }
+            
+            // For demo purposes, just toggle the connection status
+            if (state.integrations[service]) {
+                // If already connected, disconnect
+                delete state.integrations[service];
+                button.textContent = 'Connect';
+                button.classList.remove('btn-secondary');
+                
+                // Update UI to show disconnected state
+                const card = button.closest('.integration-card');
+                card.classList.remove('connected');
+            } else {
+                // If not connected, connect
+                state.integrations[service] = {
+                    connected: true,
+                    connectedAt: new Date().toISOString()
+                };
+                button.textContent = 'Disconnect';
+                button.classList.add('btn-secondary');
+                
+                // Update UI to show connected state
+                const card = button.closest('.integration-card');
+                card.classList.add('connected');
+                
+                // For Spotify specifically, we'll send a command to the extension
+                if (service === 'spotify') {
+                    sendMessage('connectSpotify');
+                }
+            }
+            
+            saveState(state);
+        });
+    });
+}
+
+// Initialize all components
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize modals
+    initializeModals();
+    
+    // Initialize tabs
+    initializeTabs();
+    
+    // Initialize journal functionality
+    initializeJournal();
+    
+    // Initialize chat functionality
+    initializeChat();
+    
+    // Initialize focus timer
+    initializeFocusTimer();
+    
+    // Initialize breathing circle
+    initializeBreathingCircle();
+    
+    // Initialize sounds
+    initializeSounds();
+    
+    // Update sound integration button states
+    updateSoundIntegrationButtons();
+});

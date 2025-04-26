@@ -242,6 +242,7 @@
                     <div class="card-header">
                         <div class="card-icon">🎵</div>
                         <h2>Ambient Sounds</h2>
+                        <button id="integrationsButton" class="icon-button" title="Sound Integrations">🔌</button>
                     </div>
                     <p>Play calming background sounds to help you focus and relax while coding.</p>
                     
@@ -251,6 +252,49 @@
                     
                     <!-- Hidden audio player element -->
                     <audio id="audioPlayer" loop></audio>
+                </div>
+            </div>
+
+            <!-- Sound Integrations Modal -->
+            <div id="integrationsModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Sound Integrations</h2>
+                        <span class="close">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <p>Connect to your favorite music services to enhance your ambient sound experience.</p>
+                        
+                        <div class="integrations-container">
+                            <div class="integration-card">
+                                <div class="integration-logo">🎧</div>
+                                <div class="integration-name">Spotify</div>
+                                <div class="integration-description">Access your Spotify playlists and favorite tracks.</div>
+                                <button class="btn integration-connect-btn" data-service="spotify">Connect</button>
+                            </div>
+                            
+                            <div class="integration-card">
+                                <div class="integration-logo">🎵</div>
+                                <div class="integration-name">YouTube Music</div>
+                                <div class="integration-description">Stream ambient music from YouTube.</div>
+                                <button class="btn integration-connect-btn" data-service="youtube">Connect</button>
+                            </div>
+                            
+                            <div class="integration-card">
+                                <div class="integration-logo">🌊</div>
+                                <div class="integration-name">Nature Sounds</div>
+                                <div class="integration-description">Premium nature soundscapes.</div>
+                                <button class="btn integration-connect-btn" data-service="nature">Connect</button>
+                            </div>
+                            
+                            <div class="integration-card">
+                                <div class="integration-logo">🧠</div>
+                                <div class="integration-name">Binaural Beats</div>
+                                <div class="integration-description">Focus-enhancing frequency patterns.</div>
+                                <button class="btn integration-connect-btn" data-service="binaural">Connect</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

@@ -3,7 +3,7 @@
     "displayName": "Zenjispace",
     "description": "A mindful AI coding companion webview for VS Code.",
     "version": "1.2.3",
-    "publisher": "arunlals89@gmail.com",
+    "publisher": "arunlal",
     "engines": {
         "vscode": "^1.60.0"
     },
