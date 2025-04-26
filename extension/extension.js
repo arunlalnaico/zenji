@@ -36,6 +36,7 @@ exports.deactivate = exports.activate = void 0;
 const vscode = __importStar(require("vscode"));
 const fs = __importStar(require("fs"));
 const mongodb_service_1 = require("./mongodb-service");
+const openai_service_1 = require("./openai-service");
 let zenjiPanel;
 let statusBarItem;
 let authStatusBarItem;
@@ -46,6 +47,10 @@ function activate(context) {
     // Initialize MongoDB connection
     (0, mongodb_service_1.initMongoDB)(context).catch(error => {
         console.error('Failed to initialize MongoDB:', error);
+    });
+    // Initialize OpenAI connection
+    (0, openai_service_1.initOpenAI)(context).catch(error => {
+        console.error('Failed to initialize OpenAI:', error);
     });
     // Initialize main Zenji status bar item
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
@@ -254,7 +259,7 @@ function createWebviewPanel(context, viewType, title, templatePath) {
         }
     });
     // Listen for messages from the webview
-    panel.webview.onDidReceiveMessage(message => {
+    panel.webview.onDidReceiveMessage((message) => __awaiter(this, void 0, void 0, function* () {
         switch (message.command) {
             case 'onboardingComplete':
                 context.globalState.update('onboardingComplete', true);
@@ -263,7 +268,7 @@ function createWebviewPanel(context, viewType, title, templatePath) {
                     // Use the GitHub profile data for the user's Zenji profile
                     context.globalState.update('userName', message.userData.githubUser.name);
                     context.globalState.update('avatar', message.userData.githubUser.avatarUrl);
-                    vscode.window.showInformationMessage(`Welcome, ${message.userData.githubUser.name}! Your profile is synced across your devices.`);
+                    vscode.window.showInformationMessage(`Welcome, ${message.userData.githubUser.name}! Your Zenji profile has been created Successfully!.`);
                 }
                 else if (message.userData && message.userData.userName) {
                     // Fallback to manually entered data if somehow GitHub auth wasn't used
@@ -387,8 +392,61 @@ function createWebviewPanel(context, viewType, title, templatePath) {
                     autoSyncData(context);
                 }
                 return;
+            case 'getAIChatResponse':
+                if (message.chatHistory) {
+                    try {
+                        // Get user name for personalized responses
+                        const userName = context.globalState.get('userName');
+                        // Ensure OpenAI is initialized
+                        if (!(0, openai_service_1.isOpenAIInitialized)()) {
+                            yield (0, openai_service_1.initOpenAI)(context);
+                        }
+                        // If still not initialized, it means there's an API key issue
+                        if (!(0, openai_service_1.isOpenAIInitialized)()) {
+                            panel.webview.postMessage({
+                                command: 'aiChatResponse',
+                                content: "I need an OpenAI API key to work properly. Please update the '.env' file with your API key or set it in the VS Code secrets storage.",
+                                success: false,
+                                error: 'API key missing or invalid'
+                            });
+                            return;
+                        }
+                        // Get AI response 
+                        const aiResponse = yield (0, openai_service_1.getChatCompletionFromOpenAI)(message.chatHistory, userName);
+                        // Send response back to webview
+                        panel.webview.postMessage({
+                            command: 'aiChatResponse',
+                            content: aiResponse,
+                            success: true
+                        });
+                    }
+                    catch (error) {
+                        console.error('Error getting AI response:', error);
+                        // More specific error message based on the error type
+                        let errorMessage = 'I apologize, but I seem to be having trouble connecting to my AI systems right now. Please try again later.';
+                        if (error instanceof Error) {
+                            if (error.message.includes('API key')) {
+                                errorMessage = "I need a valid OpenAI API key to work properly. Please update the '.env' file with your API key.";
+                            }
+                            else if (error.message.includes('rate limit')) {
+                                errorMessage = "I've reached my API rate limit. Please try again in a moment.";
+                            }
+                            else if (error.message.includes('network')) {
+                                errorMessage = "I'm having trouble connecting to the OpenAI servers. Please check your internet connection.";
+                            }
+                        }
+                        // Send error back to webview
+                        panel.webview.postMessage({
+                            command: 'aiChatResponse',
+                            content: errorMessage,
+                            success: false,
+                            error: error instanceof Error ? error.message : 'Unknown error occurred'
+                        });
+                    }
+                }
+                return;
         }
-    }, undefined, context.subscriptions);
+    }), undefined, context.subscriptions);
     panel.onDidDispose(() => zenjiPanel = undefined, null, context.subscriptions);
     return panel;
 }
@@ -698,5 +756,7 @@ function deactivate() {
     (0, mongodb_service_1.closeMongoDB)().catch(error => {
         console.error('Failed to close MongoDB connection:', error);
     });
+    // Close OpenAI client
+    (0, openai_service_1.closeOpenAI)();
 }
 exports.deactivate = deactivate;

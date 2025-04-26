@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { initMongoDB, saveUserDataToMongoDB, getUserDataFromMongoDB, closeMongoDB, isMongoDBConnected } from './mongodb-service';
+import { initOpenAI, getChatCompletionFromOpenAI, closeOpenAI, isOpenAIInitialized } from './openai-service';
 
 let zenjiPanel: vscode.WebviewPanel | undefined;
 let statusBarItem: vscode.StatusBarItem;
@@ -12,6 +13,11 @@ export function activate(context: vscode.ExtensionContext) {
     // Initialize MongoDB connection
     initMongoDB(context).catch(error => {
         console.error('Failed to initialize MongoDB:', error);
+    });
+    
+    // Initialize OpenAI connection
+    initOpenAI(context).catch(error => {
+        console.error('Failed to initialize OpenAI:', error);
     });
     
     // Initialize main Zenji status bar item
@@ -258,7 +264,7 @@ function createWebviewPanel(context: vscode.ExtensionContext, viewType: string, 
 
     // Listen for messages from the webview
     panel.webview.onDidReceiveMessage(
-        message => {
+        async message => {
             switch (message.command) { 
                 case 'onboardingComplete':
                     context.globalState.update('onboardingComplete', true);
@@ -420,6 +426,64 @@ function createWebviewPanel(context: vscode.ExtensionContext, viewType: string, 
                         
                         // Auto-sync when chat messages are added
                         autoSyncData(context);
+                    }
+                    return;
+                    
+                case 'getAIChatResponse':
+                    if (message.chatHistory) {
+                        try {
+                            // Get user name for personalized responses
+                            const userName = context.globalState.get('userName') as string;
+                            
+                            // Ensure OpenAI is initialized
+                            if (!isOpenAIInitialized()) {
+                                await initOpenAI(context);
+                            }
+                            
+                            // If still not initialized, it means there's an API key issue
+                            if (!isOpenAIInitialized()) {
+                                panel.webview.postMessage({
+                                    command: 'aiChatResponse',
+                                    content: "I need an OpenAI API key to work properly. Please update the '.env' file with your API key or set it in the VS Code secrets storage.",
+                                    success: false,
+                                    error: 'API key missing or invalid'
+                                });
+                                return;
+                            }
+                            
+                            // Get AI response 
+                            const aiResponse = await getChatCompletionFromOpenAI(message.chatHistory, userName);
+                            
+                            // Send response back to webview
+                            panel.webview.postMessage({
+                                command: 'aiChatResponse',
+                                content: aiResponse,
+                                success: true
+                            });
+                        } catch (error) {
+                            console.error('Error getting AI response:', error);
+                            
+                            // More specific error message based on the error type
+                            let errorMessage = 'I apologize, but I seem to be having trouble connecting to my AI systems right now. Please try again later.';
+                            
+                            if (error instanceof Error) {
+                                if (error.message.includes('API key')) {
+                                    errorMessage = "I need a valid OpenAI API key to work properly. Please update the '.env' file with your API key.";
+                                } else if (error.message.includes('rate limit')) {
+                                    errorMessage = "I've reached my API rate limit. Please try again in a moment.";
+                                } else if (error.message.includes('network')) {
+                                    errorMessage = "I'm having trouble connecting to the OpenAI servers. Please check your internet connection.";
+                                }
+                            }
+                            
+                            // Send error back to webview
+                            panel.webview.postMessage({
+                                command: 'aiChatResponse',
+                                content: errorMessage,
+                                success: false,
+                                error: error instanceof Error ? error.message : 'Unknown error occurred'
+                            });
+                        }
                     }
                     return;
             }
@@ -767,4 +831,7 @@ export function deactivate() {
     closeMongoDB().catch(error => {
         console.error('Failed to close MongoDB connection:', error);
     });
+    
+    // Close OpenAI client
+    closeOpenAI();
 }

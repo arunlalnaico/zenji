@@ -55,6 +55,36 @@
             margin-left: 8px;
             vertical-align: middle;
         }
+        
+        /* Timer display styles */
+        .timer-display {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--primary-color);
+        }
+        
+        .timer-time {
+            font-size: 2.5em;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+        
+        .timer-label {
+            font-size: 1em;
+            color: var(--text-color);
+            opacity: 0.8;
+            margin-bottom: 15px;
+        }
+        
+        .btn-small {
+            font-size: 0.9em;
+            padding: 5px 10px;
+        }
     </style>
 </head>
 <body>
@@ -173,6 +203,13 @@
                     </div>
                     <button id="startFocus" class="btn">Start 25min Focus Session</button>
                     <button id="startBreak" class="btn btn-secondary">Take a 5min Break</button>
+                    
+                    <!-- Timer display -->
+                    <div id="timerDisplay" class="timer-display" style="display: none;">
+                        <div class="timer-time">25:00</div>
+                        <div class="timer-label">Focus Session</div>
+                        <button id="cancelTimer" class="btn btn-small">Cancel</button>
+                    </div>
                     
                     <div class="breathing-circle">
                         <span>Breathe</span>
@@ -353,7 +390,7 @@
                         // Update welcome message with sync badge if not already present
                         const welcomeMessage = document.getElementById('welcome-message');
                         if (!welcomeMessage.querySelector('.sync-badge')) {
-                            welcomeMessage.innerHTML += ' <span class="sync-badge">Connected</span>';
+                            welcomeMessage.innerHTML += ' <span class="sync-badge">Verified</span>';
                         }
                         
                         // Enable sync buttons

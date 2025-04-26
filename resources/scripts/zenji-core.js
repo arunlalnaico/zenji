@@ -238,6 +238,16 @@ function initializeFocusTools() {
     const breathingCircle = document.querySelector('.breathing-circle');
     const startFocusBtn = document.getElementById('startFocus');
     const startBreakBtn = document.getElementById('startBreak');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const timerTime = document.querySelector('.timer-time');
+    const timerLabel = document.querySelector('.timer-label');
+    const cancelTimerBtn = document.getElementById('cancelTimer');
+    
+    // Variables for timer
+    let timerInterval;
+    let remainingSeconds = 0;
+    let isTimerRunning = false;
+    let timerType = ''; // 'focus' or 'break'
     
     // Load stats from state
     const state = loadState();
@@ -259,10 +269,102 @@ function initializeFocusTools() {
         breathingCircle.classList.toggle('active');
     });
     
+    // Format seconds to MM:SS display
+    function formatTimeDisplay(totalSeconds) {
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    // Start timer function
+    function startTimer(duration, type) {
+        // Clear any existing timer
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+        
+        // Set timer variables
+        remainingSeconds = duration * 60;
+        isTimerRunning = true;
+        timerType = type;
+        
+        // Update display
+        timerTime.textContent = formatTimeDisplay(remainingSeconds);
+        timerLabel.textContent = type === 'focus' ? 'Focus Session' : 'Break Time';
+        timerDisplay.style.display = 'block';
+        
+        // Hide buttons while timer is running
+        startFocusBtn.style.display = 'none';
+        startBreakBtn.style.display = 'none';
+        
+        // Start countdown
+        timerInterval = setInterval(() => {
+            remainingSeconds--;
+            
+            // Update timer display
+            timerTime.textContent = formatTimeDisplay(remainingSeconds);
+            
+            // Check if timer is complete
+            if (remainingSeconds <= 0) {
+                completeTimer();
+            }
+        }, 1000);
+    }
+    
+    // Complete timer function
+    function completeTimer() {
+        clearInterval(timerInterval);
+        isTimerRunning = false;
+        
+        // Show notification
+        const message = timerType === 'focus' 
+            ? 'Focus session completed! Take a break.' 
+            : 'Break time is over. Ready for another focus session?';
+            
+        // You can add notification code here
+        console.log(message);
+        
+        // Reset UI
+        resetTimerUI();
+    }
+    
+    // Reset timer UI
+    function resetTimerUI() {
+        timerDisplay.style.display = 'none';
+        startFocusBtn.style.display = 'inline-block';
+        startBreakBtn.style.display = 'inline-block';
+    }
+    
+    // Cancel timer
+    cancelTimerBtn.addEventListener('click', () => {
+        if (isTimerRunning) {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            
+            // If canceling a focus session, don't count it in stats
+            if (timerType === 'focus') {
+                // Subtract the session we added at the start
+                focusStats.focusCount--;
+                // Only subtract minutes that weren't actually focused
+                const minutesFocused = Math.ceil((25 * 60 - remainingSeconds) / 60);
+                focusStats.focusMinutes -= (25 - minutesFocused);
+                
+                // Update display
+                document.getElementById('focusCount').textContent = focusStats.focusCount;
+                document.getElementById('focusMinutes').textContent = focusStats.focusMinutes;
+                
+                // Save to state
+                state.focusStats = focusStats;
+                saveState(state);
+            }
+            
+            resetTimerUI();
+        }
+    });
+    
     // Focus session button
     startFocusBtn.addEventListener('click', () => {
-        // This would typically start a timer and show notifications
-        // For now, just update stats
+        // Update stats
         focusStats.focusCount++;
         focusStats.focusMinutes += 25;
         
@@ -276,11 +378,14 @@ function initializeFocusTools() {
         
         // Notify extension
         sendMessage('startFocus', { duration: 25 });
+        
+        // Start the timer for 25 minutes
+        startTimer(25, 'focus');
     });
     
     // Break button
     startBreakBtn.addEventListener('click', () => {
-        // Similar to focus, but for breaks
+        // Update stats
         focusStats.breakCount++;
         
         // Update display
@@ -292,6 +397,9 @@ function initializeFocusTools() {
         
         // Notify extension
         sendMessage('startBreak', { duration: 5 });
+        
+        // Start the timer for 5 minutes
+        startTimer(5, 'break');
     });
 }
 
@@ -447,7 +555,7 @@ function initializeJournal() {
     
     // Load journal entries from state
     const state = loadState();
-    const journalEntries = state.journalEntries || [];
+    let journalEntries = state.journalEntries || [];
     
     // Display existing entries
     renderJournalEntries(journalEntries);
@@ -464,27 +572,41 @@ function initializeJournal() {
             content: entryText
         };
         
-        // Add to entries array
-        const entries = [...journalEntries];
-        entries.unshift(newEntry);
+        // Get the latest entries from state to ensure we have the most up-to-date list
+        const currentState = loadState();
+        const currentEntries = currentState.journalEntries || [];
+        
+        // Add to entries array (ensure we're working with a new array by spreading)
+        const updatedEntries = [newEntry, ...currentEntries];
         
         // Save to state
-        state.journalEntries = entries;
-        saveState(state);
+        currentState.journalEntries = updatedEntries;
+        saveState(currentState);
+        
+        // Update our local reference
+        journalEntries = updatedEntries;
         
         // Clear input
         journalEntry.value = '';
         
         // Re-render entries
-        renderJournalEntries(entries);
+        renderJournalEntries(updatedEntries);
         
-        // Send to extension for permanent storage
-        sendMessage('saveJournalEntries', { entries: entries });
+        // Send to extension for permanent storage - ensure we're sending ALL entries
+        sendMessage('saveJournalEntries', { entries: updatedEntries });
     });
     
     // Add a helper function to expose renderJournalEntries globally
     window.renderJournalEntries = function(entries) {
         renderJournalEntries(entries);
+        
+        // Also update our local reference and state when entries are updated externally
+        if (entries) {
+            const currentState = loadState();
+            currentState.journalEntries = entries;
+            saveState(currentState);
+            journalEntries = entries;
+        }
     };
     
     function renderJournalEntries(entries) {
@@ -529,7 +651,7 @@ function initializeChat() {
     renderChatMessages(chatHistory);
     
     // Send message
-    function sendMessage() {
+    function sendChatMessage() {
         const message = chatInput.value.trim();
         if (!message) return;
         
@@ -545,39 +667,60 @@ function initializeChat() {
         // Show typing indicator
         typingIndicator.style.display = 'flex';
         
-        // Simulate AI response (in a real app, this would call the extension)
-        setTimeout(() => {
-            // Hide typing indicator
-            typingIndicator.style.display = 'none';
+        // Send message to extension to get AI response from OpenAI
+        sendMessage('getAIChatResponse', { chatHistory: chatHistory });
+        
+        // Listen for response from OpenAI via the extension
+        const responseHandler = function(event) {
+            const response = event.data;
             
-            // Add AI response
-            chatHistory.push({ 
-                role: 'assistant', 
-                content: "I'm here to help you stay mindful during your coding sessions. Remember to take breaks and stay hydrated. What specific mindfulness assistance do you need today?"
-            });
-            
-            // Update chat UI
-            renderChatMessages(chatHistory);
-            
-            // Save to state
-            state.chatHistory = chatHistory;
-            saveState(state);
-            
-            // Send chat history to extension for syncing
-            sendMessage('saveChatMessage', { chatHistory: chatHistory });
-            
-            // Scroll to bottom
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }, 1500);
+            if (response.command === 'aiChatResponse') {
+                // Remove this event listener once we've processed the response
+                window.removeEventListener('message', responseHandler);
+                
+                // Hide typing indicator
+                typingIndicator.style.display = 'none';
+                
+                if (response.success) {
+                    // Add AI response to history
+                    chatHistory.push({ 
+                        role: 'assistant', 
+                        content: response.content
+                    });
+                } else {
+                    // Add error message if something went wrong
+                    chatHistory.push({ 
+                        role: 'assistant', 
+                        content: response.content
+                    });
+                }
+                
+                // Update chat UI
+                renderChatMessages(chatHistory);
+                
+                // Save to state
+                state.chatHistory = chatHistory;
+                saveState(state);
+                
+                // Send chat history to extension for syncing
+                sendMessage('saveChatMessage', { chatHistory: chatHistory });
+                
+                // Scroll to bottom
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        };
+        
+        // Add event listener for the AI response
+        window.addEventListener('message', responseHandler);
     }
     
     // Send button click
-    sendChatBtn.addEventListener('click', sendMessage);
+    sendChatBtn.addEventListener('click', sendChatMessage);
     
     // Enter key press
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            sendMessage();
+            sendChatMessage();
         }
     });
     
