@@ -38,6 +38,7 @@ const fs = __importStar(require("fs"));
 const mongodb_service_1 = require("./mongodb-service");
 const openai_service_1 = require("./openai-service");
 const spotify_service_1 = require("./spotify-service");
+const spotify_constants_1 = require("./spotify-constants");
 let zenjiPanel;
 let statusBarItem;
 let authStatusBarItem;
@@ -193,11 +194,17 @@ function clearAllData(context) {
         const keysToRemove = [
             'avatar', 'userName', 'focusStats', 'journalEntries',
             'chatHistory', 'sound', 'activeTab', 'activeJournalTab',
-            'githubUserId', 'lastSyncedTimestamp'
+            'githubUserId', 'lastSyncedTimestamp',
+            // Add Spotify/integration related keys
+            'spotifyConnected', 'spotify-connected-at', spotify_constants_1.AUTH_STATE_KEY
         ];
+        // Clear all keys from global state
         for (const key of keysToRemove) {
             yield context.globalState.update(key, undefined);
         }
+        // Clear Spotify tokens from secrets storage
+        yield context.secrets.delete(spotify_constants_1.TOKEN_KEY);
+        yield context.secrets.delete(spotify_constants_1.REFRESH_TOKEN_KEY);
         // Make sure to set onboardingComplete to false explicitly
         yield context.globalState.update('onboardingComplete', false);
         zenjiPanel === null || zenjiPanel === void 0 ? void 0 : zenjiPanel.dispose();
@@ -609,7 +616,18 @@ function syncDataToCloud(context) {
                     activeTab: context.globalState.get('activeTab'),
                     activeJournalTab: context.globalState.get('activeJournalTab'),
                     sound: context.globalState.get('sound'),
-                    soundUrl: context.globalState.get('soundUrl') // Added sound URL
+                    soundUrl: context.globalState.get('soundUrl'),
+                    // Add integration data
+                    integrations: {
+                        // Add Spotify integration data
+                        spotify: {
+                            connected: (0, spotify_service_1.isSpotifyConnected)(),
+                            token: context.globalState.get(spotify_constants_1.TOKEN_KEY),
+                            refreshToken: context.globalState.get(spotify_constants_1.REFRESH_TOKEN_KEY),
+                            authState: context.globalState.get(spotify_constants_1.AUTH_STATE_KEY)
+                        },
+                        // Add other integrations here as they are implemented
+                    }
                 }
             };
             // Ensure MongoDB is initialized before attempting to save data
@@ -671,9 +689,9 @@ function retrieveDataFromCloud(context) {
             if (!cloudData) {
                 throw new Error('No data found in cloud for this user');
             }
-            // Update local state with retrieved data
+            // Update local data from cloud data
+            console.log('Restoring data from cloud...');
             if (cloudData.data) {
-                // Update user data in VS Code global state
                 if (cloudData.data.avatar) {
                     yield context.globalState.update('avatar', cloudData.data.avatar);
                 }
@@ -697,6 +715,32 @@ function retrieveDataFromCloud(context) {
                 }
                 if (cloudData.data.sound) {
                     yield context.globalState.update('sound', cloudData.data.sound);
+                }
+                // Restore integrations if available
+                if (cloudData.data.integrations) {
+                    console.log('Restoring integration data...');
+                    // Restore Spotify integration
+                    if (cloudData.data.integrations.spotify && cloudData.data.integrations.spotify.connected) {
+                        // Store tokens in secrets storage
+                        if (cloudData.data.integrations.spotify.token) {
+                            yield context.secrets.store('spotify-token', cloudData.data.integrations.spotify.token);
+                        }
+                        if (cloudData.data.integrations.spotify.refreshToken) {
+                            yield context.secrets.store('spotify-refresh-token', cloudData.data.integrations.spotify.refreshToken);
+                        }
+                        // Store connected timestamp
+                        if (cloudData.data.integrations.spotify.connectedAt) {
+                            yield context.globalState.update('spotifyConnectedAt', cloudData.data.integrations.spotify.connectedAt);
+                        }
+                        // Notify webview about Spotify connection status
+                        if (zenjiPanel) {
+                            zenjiPanel.webview.postMessage({
+                                command: 'spotifyConnectionStatus',
+                                isConnected: true
+                            });
+                        }
+                    }
+                    // We can add more integrations here as they are implemented
                 }
             }
             // Update last synced timestamp
@@ -876,6 +920,39 @@ function autoSyncData(context, silentMode = true) {
                 }
             }
             return false;
+        }
+    });
+}
+/**
+ * Helper function to get Spotify integration data for cloud sync
+ */
+function getSpotifyIntegrationData(context) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const isConnected = (0, spotify_service_1.isSpotifyConnected)();
+            // If not connected, just return basic state
+            if (!isConnected) {
+                return {
+                    connected: false
+                };
+            }
+            // Get tokens from extension context secrets
+            const accessToken = yield context.secrets.get(spotify_constants_1.TOKEN_KEY);
+            const refreshToken = yield context.secrets.get(spotify_constants_1.REFRESH_TOKEN_KEY);
+            return {
+                connected: true,
+                connectedAt: context.globalState.get('spotify-connected-at') || new Date().toISOString(),
+                // Don't include actual tokens in the sync data for security
+                hasAccessToken: !!accessToken,
+                hasRefreshToken: !!refreshToken
+            };
+        }
+        catch (error) {
+            console.error('Error getting Spotify integration data:', error);
+            return {
+                connected: false,
+                error: error instanceof Error ? error.message : 'Unknown error'
+            };
         }
     });
 }

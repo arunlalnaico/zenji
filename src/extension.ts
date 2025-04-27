@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import { initMongoDB, saveUserDataToMongoDB, getUserDataFromMongoDB, closeMongoDB, isMongoDBConnected } from './mongodb-service';
 import { initOpenAI, getChatCompletionFromOpenAI, closeOpenAI, isOpenAIInitialized } from './openai-service';
 import { connectToSpotify, disconnectSpotify, isSpotifyConnected, getSpotifyPlaylists, playSpotifyPlaylist } from './spotify-service';
+import { TOKEN_KEY, REFRESH_TOKEN_KEY, AUTH_STATE_KEY } from './spotify-constants';
 
 let zenjiPanel: vscode.WebviewPanel | undefined;
 let statusBarItem: vscode.StatusBarItem;
@@ -187,11 +188,20 @@ async function clearAllData(context: vscode.ExtensionContext) {
     const keysToRemove = [
         'avatar', 'userName', 'focusStats', 'journalEntries',
         'chatHistory', 'sound', 'activeTab', 'activeJournalTab',
-        'githubUserId', 'lastSyncedTimestamp' 
+        'githubUserId', 'lastSyncedTimestamp',
+        // Add Spotify/integration related keys
+        'spotifyConnected', 'spotify-connected-at', AUTH_STATE_KEY
     ];
+    
+    // Clear all keys from global state
     for (const key of keysToRemove) {
         await context.globalState.update(key, undefined);
     }
+    
+    // Clear Spotify tokens from secrets storage
+    await context.secrets.delete(TOKEN_KEY);
+    await context.secrets.delete(REFRESH_TOKEN_KEY);
+    
     // Make sure to set onboardingComplete to false explicitly
     await context.globalState.update('onboardingComplete', false);
     
@@ -650,15 +660,27 @@ async function syncDataToCloud(context: vscode.ExtensionContext) {
         const userData = {
             timestamp: new Date().toISOString(),
             data: {
-            avatar: context.globalState.get('avatar'),
-            userName: context.globalState.get('userName'),
-            focusStats: context.globalState.get('focusStats'),
-            journalEntries: context.globalState.get('journalEntries'),
-            chatHistory: context.globalState.get('chatHistory'),
-            activeTab: context.globalState.get('activeTab'),
-            activeJournalTab: context.globalState.get('activeJournalTab'),
-            sound: context.globalState.get('sound'),
-            soundUrl: context.globalState.get('soundUrl') // Added sound URL
+                avatar: context.globalState.get('avatar'),
+                userName: context.globalState.get('userName'),
+                focusStats: context.globalState.get('focusStats'),
+                journalEntries: context.globalState.get('journalEntries'),
+                chatHistory: context.globalState.get('chatHistory'),
+                activeTab: context.globalState.get('activeTab'),
+                activeJournalTab: context.globalState.get('activeJournalTab'),
+                sound: context.globalState.get('sound'),
+                soundUrl: context.globalState.get('soundUrl'), // Added sound URL
+                
+                // Add integration data
+                integrations: {
+                    // Add Spotify integration data
+                    spotify: {
+                        connected: isSpotifyConnected(),
+                        token: context.globalState.get(TOKEN_KEY),
+                        refreshToken: context.globalState.get(REFRESH_TOKEN_KEY),
+                        authState: context.globalState.get(AUTH_STATE_KEY)
+                    },
+                    // Add other integrations here as they are implemented
+                }
             }
         };
 
@@ -730,45 +752,69 @@ async function retrieveDataFromCloud(context: vscode.ExtensionContext) {
             throw new Error('No data found in cloud for this user');
         }
         
-        // Update local state with retrieved data
+        // Update local data from cloud data
+        console.log('Restoring data from cloud...');
+        
         if (cloudData.data) {
-            // Update user data in VS Code global state
             if (cloudData.data.avatar) {
                 await context.globalState.update('avatar', cloudData.data.avatar);
             }
-            
             if (cloudData.data.userName) {
                 await context.globalState.update('userName', cloudData.data.userName);
             }
-            
             if (cloudData.data.focusStats) {
                 await context.globalState.update('focusStats', cloudData.data.focusStats);
             }
-            
             if (cloudData.data.journalEntries) {
                 await context.globalState.update('journalEntries', cloudData.data.journalEntries);
             }
-            
             if (cloudData.data.chatHistory) {
                 await context.globalState.update('chatHistory', cloudData.data.chatHistory);
             }
-            
             if (cloudData.data.activeTab) {
                 await context.globalState.update('activeTab', cloudData.data.activeTab);
             }
-            
             if (cloudData.data.activeJournalTab) {
                 await context.globalState.update('activeJournalTab', cloudData.data.activeJournalTab);
             }
-            
             if (cloudData.data.sound) {
                 await context.globalState.update('sound', cloudData.data.sound);
+            }
+            
+            // Restore integrations if available
+            if (cloudData.data.integrations) {
+                console.log('Restoring integration data...');
+                
+                // Restore Spotify integration
+                if (cloudData.data.integrations.spotify && cloudData.data.integrations.spotify.connected) {
+                    // Store tokens in secrets storage
+                    if (cloudData.data.integrations.spotify.token) {
+                        await context.secrets.store('spotify-token', cloudData.data.integrations.spotify.token);
+                    }
+                    if (cloudData.data.integrations.spotify.refreshToken) {
+                        await context.secrets.store('spotify-refresh-token', cloudData.data.integrations.spotify.refreshToken);
+                    }
+                    
+                    // Store connected timestamp
+                    if (cloudData.data.integrations.spotify.connectedAt) {
+                        await context.globalState.update('spotifyConnectedAt', cloudData.data.integrations.spotify.connectedAt);
+                    }
+                    
+                    // Notify webview about Spotify connection status
+                    if (zenjiPanel) {
+                        zenjiPanel.webview.postMessage({
+                            command: 'spotifyConnectionStatus',
+                            isConnected: true
+                        });
+                    }
+                }
+                
+                // We can add more integrations here as they are implemented
             }
         }
         
         // Update last synced timestamp
         await context.globalState.update('lastSyncedTimestamp', new Date().toISOString());
-        
         return true;
     } catch (error) {
         console.error('Failed to retrieve data:', error);
@@ -952,6 +998,40 @@ async function autoSyncData(context: vscode.ExtensionContext, silentMode = true)
         }
         
         return false;
+    }
+}
+
+/**
+ * Helper function to get Spotify integration data for cloud sync
+ */
+async function getSpotifyIntegrationData(context: vscode.ExtensionContext): Promise<any> {
+    try {
+        const isConnected = isSpotifyConnected();
+        
+        // If not connected, just return basic state
+        if (!isConnected) {
+            return {
+                connected: false
+            };
+        }
+        
+        // Get tokens from extension context secrets
+        const accessToken = await context.secrets.get(TOKEN_KEY);
+        const refreshToken = await context.secrets.get(REFRESH_TOKEN_KEY);
+        
+        return {
+            connected: true,
+            connectedAt: context.globalState.get('spotify-connected-at') || new Date().toISOString(),
+            // Don't include actual tokens in the sync data for security
+            hasAccessToken: !!accessToken,
+            hasRefreshToken: !!refreshToken
+        };
+    } catch (error) {
+        console.error('Error getting Spotify integration data:', error);
+        return {
+            connected: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        };
     }
 }
 
