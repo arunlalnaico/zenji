@@ -334,6 +334,19 @@
     color: var(--primary-color);
 }
 
+/* Integration Categories */
+.integration-category {
+    margin-bottom: 30px;
+}
+
+.category-title {
+    font-size: 1.2em;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--card-border);
+    color: var(--primary-color);
+}
+
 /* Journal */
 .journal-prompt {
     background-color: rgba(106, 115, 193, 0.05);
@@ -602,4 +615,18 @@ textarea {
 .notification.show {
     transform: translateY(0);
     opacity: 1;
+}
+
+/* Development Tab Content */
+.dev-content-container {
+    margin-top: 20px;
+    text-align: center;
+    padding: 15px;
+    background-color: rgba(106, 115, 193, 0.05);
+    border-radius: 8px;
+}
+
+.connect-message {
+    margin-bottom: 15px;
+    opacity: 0.8;
 }

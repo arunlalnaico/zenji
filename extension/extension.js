@@ -37,8 +37,6 @@ const vscode = __importStar(require("vscode"));
 const fs = __importStar(require("fs"));
 const mongodb_service_1 = require("./mongodb-service");
 const openai_service_1 = require("./openai-service");
-const spotify_service_1 = require("./spotify-service");
-const spotify_constants_1 = require("./spotify-constants");
 let zenjiPanel;
 let statusBarItem;
 let authStatusBarItem;
@@ -194,17 +192,12 @@ function clearAllData(context) {
         const keysToRemove = [
             'avatar', 'userName', 'focusStats', 'journalEntries',
             'chatHistory', 'sound', 'activeTab', 'activeJournalTab',
-            'githubUserId', 'lastSyncedTimestamp',
-            // Add Spotify/integration related keys
-            'spotifyConnected', 'spotify-connected-at', spotify_constants_1.AUTH_STATE_KEY
+            'githubUserId', 'lastSyncedTimestamp'
         ];
         // Clear all keys from global state
         for (const key of keysToRemove) {
             yield context.globalState.update(key, undefined);
         }
-        // Clear Spotify tokens from secrets storage
-        yield context.secrets.delete(spotify_constants_1.TOKEN_KEY);
-        yield context.secrets.delete(spotify_constants_1.REFRESH_TOKEN_KEY);
         // Make sure to set onboardingComplete to false explicitly
         yield context.globalState.update('onboardingComplete', false);
         zenjiPanel === null || zenjiPanel === void 0 ? void 0 : zenjiPanel.dispose();
@@ -453,133 +446,23 @@ function createWebviewPanel(context, viewType, title, templatePath) {
                     }
                 }
                 return;
-            case 'connectSpotify':
-                vscode.window.showInformationMessage('Received Spotify connect request');
+            case 'getAllIntegrations':
                 try {
-                    // Call the Spotify service to connect
-                    const success = yield (0, spotify_service_1.connectToSpotify)(context);
-                    if (success) {
-                        // Store connection state
-                        yield context.globalState.update('spotifyConnected', true);
-                        // Send success message back to webview
-                        panel.webview.postMessage({
-                            command: 'spotifyConnectionStatus',
-                            isConnected: true
-                        });
-                        vscode.window.showInformationMessage('Sent Spotify success status to webview');
-                    }
-                    else {
-                        panel.webview.postMessage({
-                            command: 'spotifyConnectionStatus',
-                            isConnected: false,
-                            error: 'Failed to connect to Spotify'
-                        });
-                        vscode.window.showInformationMessage('Sent Spotify failure status to webview');
-                    }
-                }
-                catch (error) {
-                    vscode.window.showErrorMessage(`Spotify connect error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                    // Send error response back to webview
+                    // Get all integrations data
+                    const integrations = yield getAllIntegrationsData(context);
+                    // Send integrations data back to webview
                     panel.webview.postMessage({
-                        command: 'spotifyConnectionStatus',
-                        isConnected: false,
-                        error: error instanceof Error ? error.message : 'Unknown error occurred'
+                        command: 'integrationsData',
+                        integrations: integrations
                     });
                 }
-                return;
-            case 'disconnectSpotify':
-                vscode.window.showInformationMessage('Received Spotify disconnect request');
-                try {
-                    const success = yield (0, spotify_service_1.disconnectSpotify)();
-                    if (success) {
-                        // Update state
-                        yield context.globalState.update('spotifyConnected', false);
-                        // Send success message back to webview
-                        panel.webview.postMessage({
-                            command: 'spotifyConnectionStatus',
-                            isConnected: false
-                        });
-                        vscode.window.showInformationMessage('Sent Spotify disconnect success to webview');
-                    }
-                    else {
-                        panel.webview.postMessage({
-                            command: 'spotifyConnectionStatus',
-                            isConnected: true,
-                            error: 'Failed to disconnect from Spotify'
-                        });
-                        vscode.window.showInformationMessage('Sent Spotify disconnect failure to webview');
-                    }
-                }
                 catch (error) {
-                    vscode.window.showErrorMessage(`Spotify disconnect error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                    // Send error response back to webview
+                    console.error('Error getting integrations data:', error);
                     panel.webview.postMessage({
-                        command: 'spotifyConnectionStatus',
-                        isConnected: true,
+                        command: 'integrationsData',
+                        integrations: [],
                         error: error instanceof Error ? error.message : 'Unknown error occurred'
                     });
-                }
-                return;
-            case 'getSpotifyPlaylists':
-                vscode.window.showInformationMessage('Received request for Spotify playlists');
-                try {
-                    // Call the Spotify service to get playlists
-                    const playlists = yield (0, spotify_service_1.getSpotifyPlaylists)();
-                    if (playlists) {
-                        // Send playlists back to webview
-                        panel.webview.postMessage({
-                            command: 'spotifyPlaylists',
-                            playlists: playlists
-                        });
-                        vscode.window.showInformationMessage('Sent Spotify playlists to webview');
-                    }
-                    else {
-                        panel.webview.postMessage({
-                            command: 'spotifyPlaylists',
-                            playlists: [],
-                            error: 'Failed to fetch Spotify playlists'
-                        });
-                    }
-                }
-                catch (error) {
-                    vscode.window.showErrorMessage(`Error fetching Spotify playlists: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                    panel.webview.postMessage({
-                        command: 'spotifyPlaylists',
-                        playlists: [],
-                        error: error instanceof Error ? error.message : 'Unknown error occurred'
-                    });
-                }
-                return;
-            case 'playSpotifyPlaylist':
-                if (message.playlistId) {
-                    vscode.window.showInformationMessage(`Received request to play Spotify playlist: ${message.playlistId}`);
-                    try {
-                        // Call the Spotify service to play the playlist
-                        const success = yield (0, spotify_service_1.playSpotifyPlaylist)(message.playlistId);
-                        if (success) {
-                            // Send success message back to webview
-                            panel.webview.postMessage({
-                                command: 'spotifyPlaybackStatus',
-                                success: true,
-                                playlistId: message.playlistId
-                            });
-                        }
-                        else {
-                            panel.webview.postMessage({
-                                command: 'spotifyPlaybackStatus',
-                                success: false,
-                                error: 'Failed to play Spotify playlist'
-                            });
-                        }
-                    }
-                    catch (error) {
-                        vscode.window.showErrorMessage(`Error playing Spotify playlist: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                        panel.webview.postMessage({
-                            command: 'spotifyPlaybackStatus',
-                            success: false,
-                            error: error instanceof Error ? error.message : 'Unknown error occurred'
-                        });
-                    }
                 }
                 return;
         }
@@ -839,6 +722,54 @@ function autoSyncData(context, silentMode = true) {
             }
             return false;
         }
+    });
+}
+// Get all integrations data
+function getAllIntegrationsData(context) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const integrations = [
+            {
+                id: 'github',
+                name: 'GitHub',
+                description: 'Access your GitHub repositories and issues.',
+                icon: '📂',
+                isConnected: !!session,
+                category: 'development'
+            },
+            {
+                id: 'jira',
+                name: 'Jira',
+                description: 'Track your Jira issues and projects.',
+                icon: '📋',
+                isConnected: false,
+                category: 'development'
+            },
+            {
+                id: 'bitbucket',
+                name: 'Bitbucket',
+                description: 'Access your Bitbucket repositories and pull requests.',
+                icon: '📊',
+                isConnected: false,
+                category: 'development'
+            },
+            {
+                id: 'slack',
+                name: 'Slack',
+                description: 'Integrate with your Slack workspace.',
+                icon: '💬',
+                isConnected: false,
+                category: 'communication'
+            },
+            {
+                id: 'trello',
+                name: 'Trello',
+                description: 'Manage your Trello boards and cards.',
+                icon: '📌',
+                isConnected: false,
+                category: 'productivity'
+            }
+        ];
+        return integrations;
     });
 }
 function deactivate() {

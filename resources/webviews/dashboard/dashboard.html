@@ -108,6 +108,242 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+        
+        /* Integration sections styles */
+        .integrations-section {
+            margin-bottom: 30px;
+        }
+        
+        .integrations-section h3 {
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+        
+        .integrations-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .integration-card {
+            background-color: rgba(106, 115, 193, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            transition: all var(--transition-speed);
+            cursor: pointer;
+            border: 1px solid transparent;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .integration-card:hover {
+            background-color: rgba(106, 115, 193, 0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .integration-card.connected {
+            border-color: var(--primary-color);
+            background-color: rgba(106, 115, 193, 0.15);
+        }
+        
+        .integration-logo {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .integration-name {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+        
+        .integration-description {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 15px;
+            flex-grow: 1;
+        }
+        
+        .integration-connect-btn {
+            margin-top: auto;
+            width: 100%;
+        }
+        
+        /* Integration status badge */
+        .integration-status {
+            display: inline-block;
+            font-size: 0.7em;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        
+        .integration-status.connected {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .integration-status.pending {
+            background-color: #f0ad4e;
+            color: white;
+        }
+        
+        /* Developer cards styles */
+        .dev-report-card {
+            background-color: rgba(106, 115, 193, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid var(--card-border);
+            transition: all var(--transition-speed);
+        }
+        
+        .dev-report-card:hover {
+            background-color: rgba(106, 115, 193, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dev-report-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .dev-report-icon {
+            font-size: 1.5em;
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+        
+        .dev-report-title {
+            font-weight: 500;
+            font-size: 1.1em;
+            margin: 0;
+        }
+        
+        .dev-report-badge {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 0.8em;
+            margin-left: auto;
+        }
+        
+        .dev-report-badge.high {
+            background-color: #e74c3c;
+        }
+        
+        .dev-report-badge.medium {
+            background-color: #f39c12;
+        }
+        
+        .dev-report-badge.low {
+            background-color: #27ae60;
+        }
+        
+        .dev-item-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .dev-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--card-border);
+        }
+        
+        .dev-item:last-child {
+            border-bottom: none;
+        }
+        
+        .dev-item-icon {
+            width: 20px;
+            text-align: center;
+            margin-right: 10px;
+            opacity: 0.7;
+        }
+        
+        .dev-item-title {
+            flex-grow: 1;
+        }
+        
+        .dev-item-priority {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .priority-high {
+            background-color: #e74c3c;
+        }
+        
+        .priority-medium {
+            background-color: #f39c12;
+        }
+        
+        .priority-low {
+            background-color: #27ae60;
+        }
+        
+        .dev-report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .dev-stat-card {
+            background-color: rgba(106, 115, 193, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            transition: all var(--transition-speed);
+        }
+        
+        .dev-stat-card:hover {
+            background-color: rgba(106, 115, 193, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dev-stat-value {
+            font-size: 2em;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+        
+        .dev-stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        .see-all-link {
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: var(--primary-color);
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .see-all-link:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -202,7 +438,10 @@
         </div>
 
         <div class="main-tabs">
-            <div class="main-tab active" data-main-tab="mindfulness">
+            <div class="main-tab active" data-main-tab="dev-reports">
+                <span class="main-tab-icon">📊</span>Dev Reports
+            </div>
+            <div class="main-tab" data-main-tab="mindfulness">
                 <span class="main-tab-icon">🧘</span>Mindfulness
             </div>
             <div class="main-tab" data-main-tab="sounds">
@@ -214,11 +453,160 @@
             <div class="main-tab" data-main-tab="chat">
                 <span class="main-tab-icon">💬</span>Ask Zenji
             </div>
+            <div class="main-tab" data-main-tab="development">
+                <span class="main-tab-icon">💻</span>Dev Space
+            </div>
         </div>
         
         <main>
+            <!-- Developer Reports tab -->
+            <div id="dev-reports-tab" class="tab-content active">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">📊</div>
+                        <h2>Today's Developer Report</h2>
+                        <button id="refreshDevReportsBtn" class="icon-button" title="Refresh Reports">🔄</button>
+                    </div>
+                    <p>Your development tasks and metrics for April 27, 2025</p>
+                    
+                    <!-- Developer metrics overview -->
+                    <div class="dev-report-grid">
+                        <div class="dev-stat-card">
+                            <div class="dev-stat-value">12</div>
+                            <div class="dev-stat-label">JIRA Tasks</div>
+                        </div>
+                        <div class="dev-stat-card">
+                            <div class="dev-stat-value">8</div>
+                            <div class="dev-stat-label">Unread Emails</div>
+                        </div>
+                        <div class="dev-stat-card">
+                            <div class="dev-stat-value">3</div>
+                            <div class="dev-stat-label">PRs to Review</div>
+                        </div>
+                        <div class="dev-stat-card">
+                            <div class="dev-stat-value">5</div>
+                            <div class="dev-stat-label">Meetings Today</div>
+                        </div>
+                    </div>
+                    
+                    <!-- JIRA tickets card -->
+                    <div class="dev-report-card">
+                        <div class="dev-report-header">
+                            <div class="dev-report-icon">🎫</div>
+                            <h3 class="dev-report-title">JIRA Tickets Assigned to You</h3>
+                            <div class="dev-report-badge">12</div>
+                        </div>
+                        <ul class="dev-item-list">
+                            <li class="dev-item">
+                                <div class="dev-item-priority priority-high"></div>
+                                <div class="dev-item-icon">🐛</div>
+                                <div class="dev-item-title">PROJ-423: Fix authentication issue in login form</div>
+                            </li>
+                            <li class="dev-item">
+                                <div class="dev-item-priority priority-high"></div>
+                                <div class="dev-item-icon">🚨</div>
+                                <div class="dev-item-title">PROJ-417: Address security vulnerability in API endpoint</div>
+                            </li>
+                            <li class="dev-item">
+                                <div class="dev-item-priority priority-medium"></div>
+                                <div class="dev-item-icon">✨</div>
+                                <div class="dev-item-title">PROJ-392: Implement new profile dashboard UI</div>
+                            </li>
+                            <li class="dev-item">
+                                <div class="dev-item-priority priority-low"></div>
+                                <div class="dev-item-icon">🧹</div>
+                                <div class="dev-item-title">PROJ-389: Refactor utility functions for better performance</div>
+                            </li>
+                        </ul>
+                        <div class="see-all-link">See all 12 tickets</div>
+                    </div>
+                    
+                    <!-- Pull Requests card -->
+                    <div class="dev-report-card">
+                        <div class="dev-report-header">
+                            <div class="dev-report-icon">🔄</div>
+                            <h3 class="dev-report-title">Pull Requests Needing Review</h3>
+                            <div class="dev-report-badge medium">3</div>
+                        </div>
+                        <ul class="dev-item-list">
+                            <li class="dev-item">
+                                <div class="dev-item-icon">🐱</div>
+                                <div class="dev-item-title">PR #142: Add dark mode support to dashboard (from sarah-dev)</div>
+                            </li>
+                            <li class="dev-item">
+                                <div class="dev-item-icon">🐱</div>
+                                <div class="dev-item-title">PR #139: Fix responsive layout issues on mobile (from carlos-ui)</div>
+                            </li>
+                            <li class="dev-item">
+                                <div class="dev-item-icon">🐱</div>
+                                <div class="dev-item-title">PR #137: Implement user settings API (from dev-team-lead)</div>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Email notifications card -->
+                    <div class="dev-report-card">
+                        <div class="dev-report-header">
+                            <div class="dev-report-icon">📧</div>
+                            <h3 class="dev-report-title">Unread Work Emails</h3>
+                            <div class="dev-report-badge medium">8</div>
+                        </div>
+                        <ul class="dev-item-list">
+                            <li class="dev-item">
+                                <div class="dev-item-icon">👤</div>
+                                <div class="dev-item-title">Team Lead: Weekly Sprint Planning - Tomorrow 10:00 AM</div>
+                            </li>
+                            <li class="dev-item">
+                                <div class="dev-item-icon">👥</div>
+                                <div class="dev-item-title">Product Manager: Updated requirements for PROJ-392</div>
+                            </li>
+                            <li class="dev-item">
+                                <div class="dev-item-icon">🏢</div>
+                                <div class="dev-item-title">HR Department: Upcoming company town hall</div>
+                            </li>
+                            <li class="dev-item">
+                                <div class="dev-item-icon">💼</div>
+                                <div class="dev-item-title">Sales Team: New client onboarding needs developer support</div>
+                            </li>
+                        </ul>
+                        <div class="see-all-link">See all 8 emails</div>
+                    </div>
+                    
+                    <!-- Meetings card -->
+                    <div class="dev-report-card">
+                        <div class="dev-report-header">
+                            <div class="dev-report-icon">📅</div>
+                            <h3 class="dev-report-title">Today's Meetings</h3>
+                            <div class="dev-report-badge">5</div>
+                        </div>
+                        <ul class="dev-item-list">
+                            <li class="dev-item">
+                                <div class="dev-item-icon">🕙</div>
+                                <div class="dev-item-title">9:30 AM - Daily Stand-up (15 min)</div>
+                            </li>
+                            <li class="dev-item">
+                                <div class="dev-item-icon">🕛</div>
+                                <div class="dev-item-title">12:00 PM - Lunch & Learn: New Architecture (45 min)</div>
+                            </li>
+                            <li class="dev-item">
+                                <div class="dev-item-icon">🕒</div>
+                                <div class="dev-item-title">2:00 PM - Code Review Session (30 min)</div>
+                            </li>
+                            <li class="dev-item">
+                                <div class="dev-item-icon">🕓</div>
+                                <div class="dev-item-title">3:30 PM - Client Demo Preparation (30 min)</div>
+                            </li>
+                            <li class="dev-item">
+                                <div class="dev-item-icon">🕔</div>
+                                <div class="dev-item-title">4:30 PM - Team Retrospective (45 min)</div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Mindfulness tab -->
-            <div id="mindfulness-tab" class="tab-content active">
+            <div id="mindfulness-tab" class="tab-content">
                 <div class="card">
                     <div class="card-header">
                         <div class="card-icon">🧘</div>
@@ -289,13 +677,6 @@
                         <p>Connect to your favorite music services to enhance your ambient sound experience.</p>
                         
                         <div class="integrations-container">
-                            <div class="integration-card">
-                                <div class="integration-logo">🎧</div>
-                                <div class="integration-name">Spotify</div>
-                                <div class="integration-description">Access your Spotify playlists and favorite tracks.</div>
-                                <button class="btn integration-connect-btn" data-service="spotify">Connect</button>
-                            </div>
-                            
                             <div class="integration-card">
                                 <div class="integration-logo">🎵</div>
                                 <div class="integration-name">YouTube Music</div>
@@ -377,6 +758,230 @@
                         <div class="chat-input">
                             <input type="text" id="chatInput" placeholder="Ask anything about mindfulness or wellness..." />
                             <button id="sendChat" class="btn">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Development tab -->
+            <div id="development-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">💻</div>
+                        <h2>Integrations</h2>
+                    </div>
+                    <p>Connect your development workflow with your favorite tools and services.</p>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="repoCount">-</div>
+                            <div class="stat-label">Repositories</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="commitCount">-</div>
+                            <div class="stat-label">Commits Today</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="issueCount">-</div>
+                            <div class="stat-label">Open Issues</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="prCount">-</div>
+                            <div class="stat-label">Open PRs</div>
+                        </div>
+                    </div>
+                    
+                    <h3>Development Integrations</h3>
+                    <div class="integrations-container">
+                        <div class="integration-card">
+                            <div class="integration-logo">🔍</div>
+                            <div class="integration-name">JirA</div>
+                            <div class="integration-description">Track assigned issues, sprints, deadlines</div>
+                            <button class="btn integration-connect-btn" data-service="jira">Connect</button>
+                        </div>
+                        
+                        <div class="integration-card">
+                            <div class="integration-logo">🐱</div>
+                            <div class="integration-name">GitHub</div>
+                            <div class="integration-description">Track PRs, issues, and code reviews</div>
+                            <button class="btn integration-connect-btn" data-service="github">Connect</button>
+                        </div>
+                        
+                        <div class="integration-card">
+                            <div class="integration-logo">🦊</div>
+                            <div class="integration-name">GitLab</div>
+                            <div class="integration-description">Similar to GitHub, lots of teams use it</div>
+                            <button class="btn integration-connect-btn" data-service="gitlab">Connect</button>
+                        </div>
+                        
+                        <div class="integration-card">
+                            <div class="integration-logo">🪣</div>
+                            <div class="integration-name">Bitbucket</div>
+                            <div class="integration-description">For PRs, especially in Atlassian shops</div>
+                            <button class="btn integration-connect-btn" data-service="bitbucket">Connect</button>
+                        </div>
+                        
+                        <div class="integration-card">
+                            <div class="integration-logo">👥</div>
+                            <div class="integration-name">Microsoft Teams</div>
+                            <div class="integration-description">Enterprise messaging</div>
+                            <button class="btn integration-connect-btn" data-service="msteams">Connect</button>
+                        </div>
+                        
+                        <div class="integration-card">
+                            <div class="integration-logo">📝</div>
+                            <div class="integration-name">Confluence</div>
+                            <div class="integration-description">Docs related to Jira tasks</div>
+                            <button class="btn integration-connect-btn" data-service="confluence">Connect</button>
+                        </div>
+                        
+                        <div class="integration-card">
+                            <div class="integration-logo">📧</div>
+                            <div class="integration-name">Gmail/OutlooK</div>
+                            <div class="integration-description">Developer communications happen there too</div>
+                            <button class="btn integration-connect-btn" data-service="email">Connect</button>
+                        </div>
+                        
+                        <div class="integration-card">
+                            <div class="integration-logo">💬</div>
+                            <div class="integration-name">sLACK</div>
+                            <div class="integration-description">Team chats, work messages</div>
+                            <button class="btn integration-connect-btn" data-service="slack">Connect</button>
+                        </div>
+                        
+                        <div class="integration-card">
+                            <div class="integration-logo">🗨️</div>
+                            <div class="integration-name">Google Chat</div>
+                            <div class="integration-description">Google Workspace messaging</div>
+                            <button class="btn integration-connect-btn" data-service="gchat">Connect</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Development Integrations Modal -->
+            <div id="devIntegrationsModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Development Integrations</h2>
+                        <span class="close">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <p>Connect your development workflow with your favorite tools and services to enhance productivity.</p>
+                        
+                        <!-- Code Repository & Issue Tracking -->
+                        <div class="integrations-section">
+                            <h3>Code Repository & Issue Tracking</h3>
+                            <div class="integrations-container">
+                                <div class="integration-card">
+                                    <div class="integration-logo">🐱</div>
+                                    <div class="integration-name">GitHub</div>
+                                    <div class="integration-description">Track PRs, issues, and code reviews</div>
+                                    <button class="btn integration-connect-btn" data-service="github">Connect</button>
+                                </div>
+                                
+                                <div class="integration-card">
+                                    <div class="integration-logo">🦊</div>
+                                    <div class="integration-name">GitLab</div>
+                                    <div class="integration-description">Similar to GitHub, lots of teams use it</div>
+                                    <button class="btn integration-connect-btn" data-service="gitlab">Connect</button>
+                                </div>
+                                
+                                <div class="integration-card">
+                                    <div class="integration-logo">🪣</div>
+                                    <div class="integration-name">Bitbucket</div>
+                                    <div class="integration-description">For PRs, especially in Atlassian shops</div>
+                                    <button class="btn integration-connect-btn" data-service="bitbucket">Connect</button>
+                                </div>
+                                
+                                <div class="integration-card">
+                                    <div class="integration-logo">🔍</div>
+                                    <div class="integration-name">Jira</div>
+                                    <div class="integration-description">Track assigned issues, sprints, deadlines</div>
+                                    <button class="btn integration-connect-btn" data-service="jira">Connect</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Project/Task Management -->
+                        <div class="integrations-section">
+                            <h3>Project & Task Management</h3>
+                            <div class="integrations-container">
+                                <div class="integration-card">
+                                    <div class="integration-logo">📋</div>
+                                    <div class="integration-name">Trello</div>
+                                    <div class="integration-description">Board-based task tracking</div>
+                                    <button class="btn integration-connect-btn" data-service="trello">Connect</button>
+                                </div>
+                                
+                                <div class="integration-card">
+                                    <div class="integration-logo">🌙</div>
+                                    <div class="integration-name">Asana</div>
+                                    <div class="integration-description">Tasks and projects management</div>
+                                    <button class="btn integration-connect-btn" data-service="asana">Connect</button>
+                                </div>
+                                
+                                <div class="integration-card">
+                                    <div class="integration-logo">🔼</div>
+                                    <div class="integration-name">ClickUp</div>
+                                    <div class="integration-description">Many tech startups use it for project management</div>
+                                    <button class="btn integration-connect-btn" data-service="clickup">Connect</button>
+                                </div>
+                                
+                                <div class="integration-card">
+                                    <div class="integration-logo">⚡</div>
+                                    <div class="integration-name">Linear</div>
+                                    <div class="integration-description">Modern dev-oriented project management (growing fast!)</div>
+                                    <button class="btn integration-connect-btn" data-service="linear">Connect</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Communication Tools -->
+                        <div class="integrations-section">
+                            <h3>Communication Tools</h3>
+                            <div class="integrations-container">
+                                <div class="integration-card">
+                                    <div class="integration-logo">💬</div>
+                                    <div class="integration-name">Slack</div>
+                                    <div class="integration-description">Team chats, work messages</div>
+                                    <button class="btn integration-connect-btn" data-service="slack">Connect</button>
+                                </div>
+                                
+                                <div class="integration-card">
+                                    <div class="integration-logo">👥</div>
+                                    <div class="integration-name">Microsoft Teams</div>
+                                    <div class="integration-description">Enterprise messaging</div>
+                                    <button class="btn integration-connect-btn" data-service="msteams">Connect</button>
+                                </div>
+                                
+                                <div class="integration-card">
+                                    <div class="integration-logo">📧</div>
+                                    <div class="integration-name">Gmail/Outlook</div>
+                                    <div class="integration-description">Developer communications happen there too</div>
+                                    <button class="btn integration-connect-btn" data-service="email">Connect</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Documentation & Knowledge Management -->
+                        <div class="integrations-section">
+                            <h3>Documentation & Knowledge Management</h3>
+                            <div class="integrations-container">
+                                <div class="integration-card">
+                                    <div class="integration-logo">📝</div>
+                                    <div class="integration-name">Confluence</div>
+                                    <div class="integration-description">Docs related to Jira tasks</div>
+                                    <button class="btn integration-connect-btn" data-service="confluence">Connect</button>
+                                </div>
+                                
+                                <div class="integration-card">
+                                    <div class="integration-logo">📔</div>
+                                    <div class="integration-name">Notion</div>
+                                    <div class="integration-description">Personal and team knowledge management</div>
+                                    <button class="btn integration-connect-btn" data-service="notion">Connect</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -469,6 +1074,20 @@
                         // Enable sync buttons
                         syncToCloudBtn.disabled = false;
                         syncFromCloudBtn.disabled = false;
+                        
+                        // Update GitHub integration cards to show connected status
+                        updateGitHubIntegrationCards(true);
+                        
+                        // Save GitHub connected status to state
+                        const state = loadState();
+                        if (!state.integrations) {
+                            state.integrations = {};
+                        }
+                        state.integrations.github = {
+                            connected: true,
+                            connectedAt: new Date().toISOString()
+                        };
+                        saveState(state);
                     } else {
                         // User is not authenticated
                         githubStatusMessage.textContent = 'Sign in with GitHub to enable cloud sync across multiple devices.';
@@ -490,9 +1109,51 @@
                         // Disable sync buttons
                         syncToCloudBtn.disabled = true;
                         syncFromCloudBtn.disabled = true;
+                        
+                        // Update GitHub integration cards to show disconnected status
+                        updateGitHubIntegrationCards(false);
+                        
+                        // Remove GitHub connected status from state
+                        const state = loadState();
+                        if (state.integrations && state.integrations.github) {
+                            delete state.integrations.github;
+                            saveState(state);
+                        }
                     }
                 }
             });
+            
+            // Function to update all GitHub integration cards
+            function updateGitHubIntegrationCards(isConnected) {
+                // Find all GitHub integration cards in both main Development tab and modal
+                const githubButtons = document.querySelectorAll('.integration-connect-btn[data-service="github"]');
+                
+                githubButtons.forEach(button => {
+                    const card = button.closest('.integration-card');
+                    
+                    if (isConnected) {
+                        // Update UI to show connected state
+                        button.textContent = 'Disconnect';
+                        button.classList.add('btn-secondary');
+                        card.classList.add('connected');
+                        
+                        // Add connected status badge if not present
+                        const nameElement = card.querySelector('.integration-name');
+                        if (!nameElement.querySelector('.integration-status')) {
+                            nameElement.innerHTML = 'GitHub <span class="integration-status connected">Connected</span>';
+                        }
+                    } else {
+                        // Update UI to show disconnected state
+                        button.textContent = 'Connect';
+                        button.classList.remove('btn-secondary');
+                        card.classList.remove('connected');
+                        
+                        // Remove connected status badge if present
+                        const nameElement = card.querySelector('.integration-name');
+                        nameElement.innerHTML = 'GitHub';
+                    }
+                });
+            }
             
             // Get last sync time from state
             const state = loadState();
@@ -503,6 +1164,11 @@
                 } catch (e) {
                     console.error('Error parsing last sync date:', e);
                 }
+            }
+            
+            // Initialize GitHub integration status on page load
+            if (state.integrations && state.integrations.github && state.integrations.github.connected) {
+                updateGitHubIntegrationCards(true);
             }
             
             // Handle sync to cloud button
@@ -560,6 +1226,309 @@
                     console.error('Sync timed out');
                 }
             });
+        });
+        
+        // Developer Reports functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            const refreshDevReportsBtn = document.getElementById('refreshDevReportsBtn');
+            
+            // Handle refresh button click
+            refreshDevReportsBtn?.addEventListener('click', () => {
+                refreshDeveloperReports();
+            });
+            
+            // Function to refresh all developer reports
+            function refreshDeveloperReports() {
+                // Show loading state
+                const devStatValues = document.querySelectorAll('.dev-stat-value');
+                devStatValues.forEach(stat => {
+                    stat.innerHTML = '<small>Loading...</small>';
+                });
+                
+                // Simulate API calls to various services
+                setTimeout(() => {
+                    // Update the stat cards with "fetched" data
+                    updateDevReportStats({
+                        jiraTasks: Math.floor(Math.random() * 10) + 5,
+                        unreadEmails: Math.floor(Math.random() * 12) + 3,
+                        pullRequests: Math.floor(Math.random() * 5) + 1,
+                        meetings: Math.floor(Math.random() * 6) + 2
+                    });
+                    
+                    // Update the JIRA tickets list
+                    updateJiraTickets();
+                    
+                    // Update pull requests list
+                    updatePullRequests();
+                    
+                    // Update emails list
+                    updateEmails();
+                    
+                    // Update meetings list
+                    updateMeetings();
+                    
+                    // Show a success notification
+                    showNotification('Developer reports refreshed successfully', 'success');
+                }, 1500);
+            }
+            
+            // Update the stat cards at the top of the dev reports tab
+            function updateDevReportStats(stats) {
+                const devStatCards = document.querySelectorAll('.dev-report-grid .dev-stat-card');
+                
+                if (devStatCards.length >= 4) {
+                    // Update JIRA tasks count
+                    devStatCards[0].querySelector('.dev-stat-value').textContent = stats.jiraTasks;
+                    
+                    // Update unread emails count
+                    devStatCards[1].querySelector('.dev-stat-value').textContent = stats.unreadEmails;
+                    
+                    // Update PRs to review count
+                    devStatCards[2].querySelector('.dev-stat-value').textContent = stats.pullRequests;
+                    
+                    // Update meetings count
+                    devStatCards[3].querySelector('.dev-stat-value').textContent = stats.meetings;
+                    
+                    // Update the badges on each card as well
+                    updateCardBadges('JIRA Tickets Assigned to You', stats.jiraTasks);
+                    updateCardBadges('Unread Work Emails', stats.unreadEmails);
+                    updateCardBadges('Pull Requests Needing Review', stats.pullRequests);
+                    updateCardBadges('Today\'s Meetings', stats.meetings);
+                }
+            }
+            
+            // Update badge counts on report cards
+            function updateCardBadges(cardTitle, count) {
+                const cards = document.querySelectorAll('.dev-report-card');
+                cards.forEach(card => {
+                    const titleElement = card.querySelector('.dev-report-title');
+                    if (titleElement && titleElement.textContent.trim() === cardTitle) {
+                        const badge = card.querySelector('.dev-report-badge');
+                        if (badge) {
+                            badge.textContent = count;
+                            
+                            // Apply color coding based on count
+                            badge.classList.remove('high', 'medium', 'low');
+                            if (count > 10) {
+                                badge.classList.add('high');
+                            } else if (count > 5) {
+                                badge.classList.add('medium');
+                            } else if (count > 0) {
+                                badge.classList.add('low');
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Sample data for generating random JIRA tickets
+            const jiraTickets = [
+                { priority: 'high', type: '🐛', title: 'Fix authentication issue in login form' },
+                { priority: 'high', type: '🚨', title: 'Address security vulnerability in API endpoint' },
+                { priority: 'high', type: '🔥', title: 'Fix server crash during high traffic periods' },
+                { priority: 'medium', type: '✨', title: 'Implement new profile dashboard UI' },
+                { priority: 'medium', type: '🧩', title: 'Add export to CSV feature for reports' },
+                { priority: 'medium', type: '🚀', title: 'Optimize database queries for faster loading' },
+                { priority: 'low', type: '🧹', title: 'Refactor utility functions for better performance' },
+                { priority: 'low', type: '📝', title: 'Update API documentation with new endpoints' },
+                { priority: 'low', type: '🎨', title: 'Improve color contrast for accessibility' }
+            ];
+            
+            // Update JIRA tickets list
+            function updateJiraTickets() {
+                const jiraList = document.querySelector('.dev-report-card:nth-child(3) .dev-item-list');
+                if (!jiraList) return;
+                
+                // Clear the existing list
+                jiraList.innerHTML = '';
+                
+                // Generate a random number of tickets (4-6)
+                const ticketCount = Math.floor(Math.random() * 3) + 4;
+                
+                // Create a shuffled copy of the tickets array
+                const shuffledTickets = [...jiraTickets].sort(() => Math.random() - 0.5);
+                
+                // Take the first n tickets from the shuffled array
+                for (let i = 0; i < ticketCount; i++) {
+                    const ticket = shuffledTickets[i];
+                    const ticketItem = document.createElement('li');
+                    ticketItem.className = 'dev-item';
+                    
+                    const projectCode = 'PROJ-' + (Math.floor(Math.random() * 100) + 350);
+                    
+                    ticketItem.innerHTML = `
+                        <div class="dev-item-priority priority-${ticket.priority}"></div>
+                        <div class="dev-item-icon">${ticket.type}</div>
+                        <div class="dev-item-title">${projectCode}: ${ticket.title}</div>
+                    `;
+                    
+                    jiraList.appendChild(ticketItem);
+                }
+                
+                // Update the "See all" link
+                const statsValue = parseInt(document.querySelector('.dev-report-grid .dev-stat-card:first-child .dev-stat-value').textContent);
+                const seeAllLink = document.querySelector('.dev-report-card:nth-child(3) .see-all-link');
+                if (seeAllLink) {
+                    seeAllLink.textContent = `See all ${statsValue} tickets`;
+                }
+            }
+            
+            // Sample data for generating random pull requests
+            const pullRequests = [
+                { user: 'sarah-dev', title: 'Add dark mode support to dashboard' },
+                { user: 'carlos-ui', title: 'Fix responsive layout issues on mobile' },
+                { user: 'dev-team-lead', title: 'Implement user settings API' },
+                { user: 'ux-designer', title: 'Update button styles across application' },
+                { user: 'backend-dev', title: 'Add caching layer for performance improvement' },
+                { user: 'new-intern', title: 'Fix typos in error messages' },
+                { user: 'qa-automation', title: 'Add integration tests for user flows' }
+            ];
+            
+            // Update pull requests list
+            function updatePullRequests() {
+                const prList = document.querySelector('.dev-report-card:nth-child(4) .dev-item-list');
+                if (!prList) return;
+                
+                // Clear the existing list
+                prList.innerHTML = '';
+                
+                // Get the PR count from the stats card
+                const prCount = parseInt(document.querySelector('.dev-report-grid .dev-stat-card:nth-child(3) .dev-stat-value').textContent);
+                
+                // Create a shuffled copy of the PRs array
+                const shuffledPRs = [...pullRequests].sort(() => Math.random() - 0.5);
+                
+                // Take the first n PRs from the shuffled array
+                for (let i = 0; i < prCount; i++) {
+                    if (i >= shuffledPRs.length) break;
+                    
+                    const pr = shuffledPRs[i];
+                    const prNumber = Math.floor(Math.random() * 50) + 120;
+                    const prItem = document.createElement('li');
+                    prItem.className = 'dev-item';
+                    
+                    prItem.innerHTML = `
+                        <div class="dev-item-icon">🐱</div>
+                        <div class="dev-item-title">PR #${prNumber}: ${pr.title} (from ${pr.user})</div>
+                    `;
+                    
+                    prList.appendChild(prItem);
+                }
+            }
+            
+            // Sample data for generating random emails
+            const emails = [
+                { sender: 'Team Lead', title: 'Weekly Sprint Planning - Tomorrow 10:00 AM', icon: '👤' },
+                { sender: 'Product Manager', title: 'Updated requirements for PROJ-392', icon: '👥' },
+                { sender: 'HR Department', title: 'Upcoming company town hall', icon: '🏢' },
+                { sender: 'Sales Team', title: 'New client onboarding needs developer support', icon: '💼' },
+                { sender: 'DevOps', title: 'Scheduled maintenance this weekend', icon: '🔧' },
+                { sender: 'CEO', title: 'Q2 Company Results and Future Plans', icon: '👑' },
+                { sender: 'IT Support', title: 'New VPN configuration required', icon: '🔒' },
+                { sender: 'Design Team', title: 'Review the latest mockups for homepage', icon: '🎨' },
+                { sender: 'Learning & Development', title: 'New training courses available', icon: '📚' }
+            ];
+            
+            // Update emails list
+            function updateEmails() {
+                const emailList = document.querySelector('.dev-report-card:nth-child(5) .dev-item-list');
+                if (!emailList) return;
+                
+                // Clear the existing list
+                emailList.innerHTML = '';
+                
+                // Get the email count from the stats card
+                const emailCount = parseInt(document.querySelector('.dev-report-grid .dev-stat-card:nth-child(2) .dev-stat-value').textContent);
+                
+                // Select a subset of emails to display (max 4)
+                const displayCount = Math.min(4, emailCount);
+                
+                // Create a shuffled copy of the emails array
+                const shuffledEmails = [...emails].sort(() => Math.random() - 0.5);
+                
+                // Take the first n emails from the shuffled array
+                for (let i = 0; i < displayCount; i++) {
+                    if (i >= shuffledEmails.length) break;
+                    
+                    const email = shuffledEmails[i];
+                    const emailItem = document.createElement('li');
+                    emailItem.className = 'dev-item';
+                    
+                    emailItem.innerHTML = `
+                        <div class="dev-item-icon">${email.icon}</div>
+                        <div class="dev-item-title">${email.sender}: ${email.title}</div>
+                    `;
+                    
+                    emailList.appendChild(emailItem);
+                }
+                
+                // Update the "See all" link
+                const seeAllLink = document.querySelector('.dev-report-card:nth-child(5) .see-all-link');
+                if (seeAllLink) {
+                    seeAllLink.textContent = `See all ${emailCount} emails`;
+                }
+            }
+            
+            // Update meetings list
+            function updateMeetings() {
+                const meetingList = document.querySelector('.dev-report-card:nth-child(6) .dev-item-list');
+                if (!meetingList) return;
+                
+                // Clear the existing list
+                meetingList.innerHTML = '';
+                
+                // Get the meeting count from the stats card
+                const meetingCount = parseInt(document.querySelector('.dev-report-grid .dev-stat-card:nth-child(4) .dev-stat-value').textContent);
+                
+                // Sample meetings
+                const meetingTimes = ['9:30 AM', '11:00 AM', '12:00 PM', '1:30 PM', '2:00 PM', '3:30 PM', '4:30 PM'];
+                const meetingIcons = ['🕙', '🕚', '🕛', '🕜', '🕝', '🕒', '🕓', '🕔'];
+                const meetingNames = [
+                    'Daily Stand-up',
+                    'Project Kick-off',
+                    'Lunch & Learn: New Architecture',
+                    'Client Meeting',
+                    'Code Review Session',
+                    'Client Demo Preparation',
+                    'Team Retrospective',
+                    'Sprint Planning',
+                    '1:1 with Manager'
+                ];
+                const meetingDurations = ['15 min', '30 min', '45 min', '60 min'];
+                
+                // Create a shuffled array of meeting times
+                const shuffledTimes = [...meetingTimes].sort(() => Math.random() - 0.5).slice(0, meetingCount);
+                
+                // Sort the times chronologically
+                shuffledTimes.sort((a, b) => {
+                    const timeA = new Date(`2000/01/01 ${a}`);
+                    const timeB = new Date(`2000/01/01 ${b}`);
+                    return timeA - timeB;
+                });
+                
+                // Create meetings for each time
+                for (let i = 0; i < meetingCount; i++) {
+                    if (i >= shuffledTimes.length) break;
+                    
+                    const time = shuffledTimes[i];
+                    const icon = meetingIcons[i % meetingIcons.length];
+                    const name = meetingNames[Math.floor(Math.random() * meetingNames.length)];
+                    const duration = meetingDurations[Math.floor(Math.random() * meetingDurations.length)];
+                    
+                    const meetingItem = document.createElement('li');
+                    meetingItem.className = 'dev-item';
+                    
+                    meetingItem.innerHTML = `
+                        <div class="dev-item-icon">${icon}</div>
+                        <div class="dev-item-title">${time} - ${name} (${duration})</div>
+                    `;
+                    
+                    meetingList.appendChild(meetingItem);
+                }
+            }
+            
+            // Initialize developer reports on page load
+            refreshDeveloperReports();
         });
     </script>
 </body>

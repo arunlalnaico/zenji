@@ -193,9 +193,6 @@ export async function closeMongoDB(): Promise<void> {
  */
 export async function syncDataToCloud(context: vscode.ExtensionContext, githubUserId: string): Promise<boolean> {
     try {
-        // Import Spotify service functions
-        const { getSpotifyIntegrationData } = await import('./spotify-service');
-        
         // Check if user ID is available
         if (!githubUserId) {
             throw new Error('GitHub user ID not available. Please authenticate with GitHub first.');
@@ -216,8 +213,7 @@ export async function syncDataToCloud(context: vscode.ExtensionContext, githubUs
                 
                 // Add integration data
                 integrations: {
-                    // Add Spotify integration data
-                    spotify: await getSpotifyIntegrationData(context)
+                    // Only developer integrations remain
                     // Add other integrations here as they are implemented
                 }
             }
@@ -248,9 +244,6 @@ export async function syncDataToCloud(context: vscode.ExtensionContext, githubUs
  */
 export async function retrieveDataFromCloud(context: vscode.ExtensionContext, githubUserId: string): Promise<boolean> {
     try {
-        // Import Spotify service functions
-        const { restoreSpotifyIntegration } = await import('./spotify-service');
-        
         // Check if user ID is available
         if (!githubUserId) {
             throw new Error('GitHub user ID not available. Please authenticate with GitHub first.');
@@ -298,11 +291,7 @@ export async function retrieveDataFromCloud(context: vscode.ExtensionContext, gi
         if (cloudData.data.integrations) {
             console.log('Restoring integration data...');
             
-            // Restore Spotify integration
-            if (cloudData.data.integrations.spotify) {
-                await restoreSpotifyIntegration(context, cloudData.data.integrations.spotify);
-            }
-            
+            // Only developer integrations remain
             // Add code to restore other integrations here as they are implemented
         }
         

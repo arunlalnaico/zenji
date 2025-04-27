@@ -567,175 +567,6 @@ function initializeSounds() {
         noSoundsMsg.style.opacity = '0.7';
         soundsContainer.appendChild(noSoundsMsg);
     }
-    
-    // Create container for Spotify playlists
-    const spotifyContainer = document.createElement('div');
-    spotifyContainer.id = 'spotifyPlaylistsContainer';
-    spotifyContainer.classList.add('spotify-playlists-container');
-    spotifyContainer.style.marginTop = '30px';
-    spotifyContainer.style.display = 'none'; // Hide initially
-    
-    // Add header for Spotify playlists
-    const spotifyHeader = document.createElement('div');
-    spotifyHeader.classList.add('spotify-header');
-    spotifyHeader.innerHTML = `
-        <h3 style="margin-bottom: 15px; display: flex; align-items: center;">
-            <span style="margin-right: 8px;">🎧</span> Your Spotify Playlists
-        </h3>
-    `;
-    spotifyContainer.appendChild(spotifyHeader);
-    
-    // Add playlist cards container
-    const playlistsGrid = document.createElement('div');
-    playlistsGrid.classList.add('playlists-grid');
-    playlistsGrid.style.display = 'grid';
-    playlistsGrid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(150px, 1fr))';
-    playlistsGrid.style.gap = '15px';
-    spotifyContainer.appendChild(playlistsGrid);
-    
-    // Add the Spotify container after the ambient sounds
-    const soundsCard = soundsContainer.closest('.card');
-    if (soundsCard) {
-        soundsCard.appendChild(spotifyContainer);
-    }
-    
-    // Load playlists if Spotify is connected
-    if (state.integrations && state.integrations.spotify && state.integrations.spotify.connected) {
-        loadSpotifyPlaylists();
-    }
-    
-    // Function to load Spotify playlists
-    function loadSpotifyPlaylists() {
-        // Show loading message
-        playlistsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 20px;">Loading your playlists...</div>';
-        spotifyContainer.style.display = 'block';
-        
-        // Request playlists from extension
-        sendMessage('getSpotifyPlaylists');
-        
-        // Listen for playlists response
-        window.addEventListener('message', handleSpotifyPlaylists);
-    }
-    
-    // Handle Spotify playlists response
-    function handleSpotifyPlaylists(event) {
-        const message = event.data;
-        
-        if (message.command === 'spotifyPlaylists') {
-            // Remove this event listener once we've processed the playlists
-            window.removeEventListener('message', handleSpotifyPlaylists);
-            
-            if (message.error || !message.playlists || message.playlists.length === 0) {
-                // Show error or empty message
-                playlistsGrid.innerHTML = `
-                    <div style="grid-column: 1/-1; text-align: center; padding: 20px; color: #888;">
-                        ${message.error || 'No playlists found in your Spotify account.'}
-                    </div>
-                `;
-                return;
-            }
-            
-            // Clear loading message
-            playlistsGrid.innerHTML = '';
-            
-            // Render playlists
-            message.playlists.forEach(playlist => {
-                const playlistCard = document.createElement('div');
-                playlistCard.classList.add('playlist-card');
-                playlistCard.style.borderRadius = '8px';
-                playlistCard.style.overflow = 'hidden';
-                playlistCard.style.backgroundColor = 'var(--card-bg, #f5f5f5)';
-                playlistCard.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
-                playlistCard.style.transition = 'transform 0.2s, box-shadow 0.2s';
-                playlistCard.style.cursor = 'pointer';
-                
-                // Add hover effect
-                playlistCard.addEventListener('mouseenter', () => {
-                    playlistCard.style.transform = 'translateY(-5px)';
-                    playlistCard.style.boxShadow = '0 5px 15px rgba(0,0,0,0.1)';
-                });
-                
-                playlistCard.addEventListener('mouseleave', () => {
-                    playlistCard.style.transform = 'translateY(0)';
-                    playlistCard.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
-                });
-                
-                // Use the first image if available, otherwise use a placeholder
-                const imageUrl = playlist.images && playlist.images.length > 0 
-                    ? playlist.images[0].url 
-                    : 'https://community.spotify.com/t5/image/serverpage/image-id/55829iC2AD64ADB887E2A5/';
-                
-                playlistCard.innerHTML = `
-                    <div style="position: relative;">
-                        <img src="${imageUrl}" alt="${playlist.name}" style="width: 100%; aspect-ratio: 1/1; object-fit: cover;">
-                        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s;">
-                            <div style="width: 40px; height: 40px; background: #1DB954; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                <span style="color: white; font-size: 18px;">▶</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="padding: 10px;">
-                        <div style="font-weight: 500; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${playlist.name}</div>
-                        <div style="font-size: 0.8em; opacity: 0.7;">${playlist.tracks.total} tracks</div>
-                    </div>
-                `;
-                
-                // Show play button on hover
-                playlistCard.querySelector('img').parentElement.addEventListener('mouseenter', () => {
-                    playlistCard.querySelector('img').parentElement.querySelector('div').style.opacity = '1';
-                });
-                
-                playlistCard.querySelector('img').parentElement.addEventListener('mouseleave', () => {
-                    playlistCard.querySelector('img').parentElement.querySelector('div').style.opacity = '0';
-                });
-                
-                // Add click handler to play the playlist
-                playlistCard.addEventListener('click', () => {
-                    // Send message to play this playlist
-                    sendMessage('playSpotifyPlaylist', { playlistId: playlist.id });
-                    
-                    // Add visual feedback
-                    const allPlaylistCards = playlistsGrid.querySelectorAll('.playlist-card');
-                    allPlaylistCards.forEach(card => card.classList.remove('playing'));
-                    playlistCard.classList.add('playing');
-                    playlistCard.style.borderColor = '#1DB954';
-                    playlistCard.style.borderWidth = '2px';
-                    playlistCard.style.borderStyle = 'solid';
-                    
-                    // Show notification
-                    showNotification(`Playing playlist: ${playlist.name}`);
-                });
-                
-                playlistsGrid.appendChild(playlistCard);
-            });
-        }
-        
-        // Handle playback status updates
-        if (message.command === 'spotifyPlaybackStatus') {
-            if (message.success) {
-                // Could update UI to show currently playing playlist
-                console.log(`Now playing playlist: ${message.playlistId}`);
-            } else {
-                // Show error
-                showNotification(`Failed to play playlist: ${message.error || 'Unknown error'}`, 'error');
-            }
-        }
-    }
-    
-    // Listen for Spotify connection status changes to show/hide playlist section
-    window.addEventListener('message', event => {
-        const message = event.data;
-        
-        if (message.command === 'spotifyConnectionStatus') {
-            if (message.isConnected) {
-                // When Spotify is connected, load playlists
-                loadSpotifyPlaylists();
-            } else {
-                // When Spotify is disconnected, hide playlist section
-                spotifyContainer.style.display = 'none';
-            }
-        }
-    });
 }
 
 // Initialize Journal
@@ -1042,6 +873,8 @@ function initializeModals() {
     
     integrationsBtn.addEventListener('click', () => {
         integrationsModal.style.display = 'block';
+        // Fetch all available integrations
+        fetchAllIntegrations();
     });
     
     integrationsClose.addEventListener('click', () => {
@@ -1058,7 +891,41 @@ function initializeModals() {
         }
     });
     
-    // Handle integration connect buttons
+    // Development Integrations modal functionality
+    const devIntegrationsModal = document.getElementById('devIntegrationsModal');
+    const devIntegrationsBtn = document.getElementById('devIntegrationsButton');
+    const devIntegrationsClose = devIntegrationsModal.querySelector('.close');
+    const connectDevButton = document.getElementById('connectDevButton');
+    
+    // Open dev integrations modal with button in toolbar
+    devIntegrationsBtn.addEventListener('click', () => {
+        devIntegrationsModal.style.display = 'block';
+        // Fetch all available integrations
+        fetchAllIntegrations();
+    });
+    
+    // Also open modal from the connect button
+    connectDevButton?.addEventListener('click', () => {
+        devIntegrationsModal.style.display = 'block';
+        // Fetch all available integrations
+        fetchAllIntegrations();
+    });
+    
+    // Close dev integrations modal
+    devIntegrationsClose.addEventListener('click', () => {
+        devIntegrationsModal.style.display = 'none';
+    });
+    
+    // Close dev integrations modal when clicking outside
+    window.addEventListener('click', (event) => {
+        if (event.target === devIntegrationsModal) {
+            devIntegrationsModal.style.display = 'none';
+        }
+    });
+}
+
+// Attach event listeners to integration connect buttons
+function attachIntegrationButtonListeners() {
     const connectButtons = document.querySelectorAll('.integration-connect-btn');
     connectButtons.forEach(button => {
         button.addEventListener('click', () => {
@@ -1070,19 +937,25 @@ function initializeModals() {
                 state.integrations = {};
             }
             
-            // For Spotify, handle differently since we use the VS Code extension
-            if (service === 'spotify') {
-                // If already connected, send disconnect command
+            // For GitHub, use the GitHub login command
+            if (service === 'github') {
+                // If already connected, log out
                 if (state.integrations[service] && state.integrations[service].connected) {
-                    sendMessage('disconnectSpotify');
-                    // UI will be updated when we get the response from extension
+                    sendMessage('executeCommand', { commandId: 'zenjispace.logout' });
+                    // UI will be updated when we get the response
                 } else {
-                    // Send connect command to extension
-                    sendMessage('connectSpotify');
+                    // Send login command
+                    sendMessage('executeCommand', { commandId: 'zenjispace.login' });
                     // Temporarily update button to indicate processing
                     button.textContent = 'Connecting...';
                     button.disabled = true;
                 }
+                return;
+            }
+            
+            // For other services (not yet implemented), show coming soon notification
+            if (['jira', 'bitbucket', 'youtube', 'nature', 'binaural', 'slack', 'trello'].includes(service)) {
+                showNotification(`${button.closest('.integration-card').querySelector('.integration-name').textContent} integration coming soon!`, 'info');
                 return;
             }
             
@@ -1113,63 +986,219 @@ function initializeModals() {
             saveState(state);
         });
     });
+}
+
+// Function to fetch and display all available integrations
+function fetchAllIntegrations() {
+    // Send request to extension to get all integrations
+    sendMessage('getAllIntegrations');
     
-    // Listen for Spotify connection status updates from extension
-    window.addEventListener('message', event => {
-        const message = event.data;
+    // Listen for integrations data from extension
+    window.addEventListener('message', handleIntegrationsData);
+}
+
+// Handle integrations data received from extension
+function handleIntegrationsData(event) {
+    const message = event.data;
+    
+    if (message.command === 'integrationsData') {
+        // Remove event listener once we've processed the data
+        window.removeEventListener('message', handleIntegrationsData);
         
-        if (message.command === 'spotifyConnectionStatus') {
-            const state = loadState();
-            if (!state.integrations) {
-                state.integrations = {};
+        if (message.error || !message.integrations) {
+            console.error('Error loading integrations:', message.error);
+            return;
+        }
+        
+        const integrations = message.integrations;
+        
+        // Find the container for the integrations
+        // This could be any of the integration containers based on what modal is open
+        const containers = document.querySelectorAll('.integrations-container');
+        if (!containers.length) return;
+        
+        // Categorize integrations based on our defined categories
+        const categorizedIntegrations = {
+            'repository': [],
+            'project': [],
+            'communication': [],
+            'documentation': []
+        };
+        
+        // Map services to categories
+        const categoryMap = {
+            'github': 'repository',
+            'gitlab': 'repository',
+            'bitbucket': 'repository',
+            'jira': 'repository',
+            'asana': 'project',
+            'trello': 'project',
+            'clickup': 'project',
+            'linear': 'project',
+            'slack': 'communication',
+            'msteams': 'communication',
+            'email': 'communication',
+            'confluence': 'documentation',
+            'notion': 'documentation'
+        };
+        
+        // Group integrations by category
+        integrations.forEach(integration => {
+            const category = categoryMap[integration.id] || 'other';
+            if (!categorizedIntegrations[category]) {
+                categorizedIntegrations[category] = [];
             }
+            categorizedIntegrations[category].push(integration);
+        });
+        
+        // Process each container
+        containers.forEach(container => {
+            // Clear existing integrations in this container
+            container.innerHTML = '';
             
-            const spotifyButton = document.querySelector('.integration-connect-btn[data-service="spotify"]');
-            const spotifyCard = spotifyButton?.closest('.integration-card');
+            // Determine which modal we're in based on parent modal
+            const parentModal = container.closest('.modal');
+            if (!parentModal) return;
             
-            if (spotifyButton) {
-                // Re-enable button
-                spotifyButton.disabled = false;
-                
-                if (message.isConnected) {
-                    // Update button to show connected state
-                    spotifyButton.textContent = 'Disconnect';
-                    spotifyButton.classList.add('btn-secondary');
-                    
-                    // Update card to show connected state
-                    if (spotifyCard) {
-                        spotifyCard.classList.add('connected');
-                    }
-                    
-                    // Update state
-                    state.integrations.spotify = {
-                        connected: true,
-                        connectedAt: new Date().toISOString()
-                    };
-                    
-                    // Show success notification
-                    showNotification('Successfully connected to Spotify');
-                } else {
-                    // Update button to show disconnected state
-                    spotifyButton.textContent = 'Connect';
-                    spotifyButton.classList.remove('btn-secondary');
-                    
-                    // Update card to show disconnected state
-                    if (spotifyCard) {
-                        spotifyCard.classList.remove('connected');
-                    }
-                    
-                    // Update state
-                    delete state.integrations.spotify;
-                    
-                    // Show error notification if there was an error
-                    if (message.error) {
-                        showNotification(`Failed to connect to Spotify: ${message.error}`, 'error');
-                    }
-                }
-                
-                saveState(state);
+            const modalId = parentModal.id;
+            
+            if (modalId === 'devIntegrationsModal') {
+                // For dev integrations modal, show all categories in organized sections
+                renderCategorizedIntegrations(container, categorizedIntegrations);
+            } else if (modalId === 'integrationsModal') {
+                // For sound integrations modal, just show those integrations
+                renderIntegrationsList(container, integrations.filter(i => i.category === 'sound'));
             }
+        });
+        
+        // Reattach event listeners to all integration connect buttons
+        attachIntegrationButtonListeners();
+    }
+}
+
+// Render integrations organized by category
+function renderCategorizedIntegrations(container, categorizedIntegrations) {
+    // Category display names
+    const categoryDisplayNames = {
+        'repository': 'Code Repository & Issue Tracking',
+        'project': 'Project & Task Management',
+        'communication': 'Communication Tools',
+        'documentation': 'Documentation & Knowledge Management'
+    };
+    
+    // Create section for each category
+    for (const [category, items] of Object.entries(categorizedIntegrations)) {
+        if (items.length === 0) continue;
+        
+        // Create category section
+        const section = document.createElement('div');
+        section.classList.add('integrations-section');
+        
+        // Add category header with proper display name
+        section.innerHTML = `<h3>${categoryDisplayNames[category] || category}</h3>`;
+        
+        // Create container for integration cards in this category
+        const categoryContainer = document.createElement('div');
+        categoryContainer.classList.add('integrations-container');
+        
+        // Add each integration to this category
+        items.forEach(integration => {
+            const card = createIntegrationCard(integration);
+            categoryContainer.appendChild(card);
+        });
+        
+        // Add container to section
+        section.appendChild(categoryContainer);
+        
+        // Add section to main container
+        container.appendChild(section);
+    }
+}
+
+// Render a flat list of integrations (no categories)
+function renderIntegrationsList(container, integrations) {
+    integrations.forEach(integration => {
+        const card = createIntegrationCard(integration);
+        container.appendChild(card);
+    });
+}
+
+// Create an integration card element
+function createIntegrationCard(integration) {
+    const card = document.createElement('div');
+    card.classList.add('integration-card');
+    
+    // Add connected class if integration is connected
+    if (integration.isConnected) {
+        card.classList.add('connected');
+    }
+    
+    // Create the card content
+    card.innerHTML = `
+        <div class="integration-logo">${integration.icon || '🔌'}</div>
+        <div class="integration-name">${integration.name}
+            ${integration.isConnected ? '<span class="integration-status connected">Connected</span>' : ''}
+        </div>
+        <div class="integration-description">${integration.description || 'Connect to enhance your Zenji experience.'}</div>
+        <button class="btn integration-connect-btn ${integration.isConnected ? 'btn-secondary' : ''}" 
+                data-service="${integration.id}">
+            ${integration.isConnected ? 'Disconnect' : 'Connect'}
+        </button>
+    `;
+    
+    return card;
+}
+
+// Update sound integration button states
+function updateSoundIntegrationButtons() {
+    // Get all sound integration buttons
+    const connectButtons = document.querySelectorAll('.integration-connect-btn');
+    
+    // Get current integration state
+    const state = loadState();
+    if (!state.integrations) {
+        state.integrations = {};
+    }
+    
+    // Update button states based on stored integrations
+    connectButtons.forEach(button => {
+        const service = button.dataset.service;
+        if (service && state.integrations[service] && state.integrations[service].connected) {
+            // Update button to show connected state
+            button.textContent = 'Disconnect';
+            button.classList.add('btn-secondary');
+            
+            // Update card to show connected state
+            const card = button.closest('.integration-card');
+            if (card) {
+                card.classList.add('connected');
+            }
+        }
+    });
+}
+
+// Initialize tabs
+function initializeTabs() {
+    // This function handles any additional tab functionality initialization
+    // that's not already covered in the main document ready event handler.
+    
+    // Most tab functionality is already handled in the main event listener
+    // This is just a placeholder for any additional tab-specific initialization
+    console.log('Tabs initialized');
+}
+
+// Initialize breathing circle
+function initializeBreathingCircle() {
+    const breathingCircle = document.querySelector('.breathing-circle');
+    if (!breathingCircle) return;
+    
+    // Set up breathing animation controls
+    breathingCircle.addEventListener('click', () => {
+        breathingCircle.classList.toggle('active');
+        
+        // If activated, show a helpful message
+        if (breathingCircle.classList.contains('active')) {
+            showNotification('Breathe in as the circle expands, and out as it contracts', 'info');
         }
     });
 }
@@ -1200,3 +1229,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update sound integration button states
     updateSoundIntegrationButtons();
 });
+
+// Initialize focus timer
+function initializeFocusTimer() {
+    // Most focus timer functionality is already defined in initializeFocusTools(),
+    // but this is kept for future extensibility and to maintain the pattern
+    // of component initialization.
+    
+    // Set up any additional focus timer functionality here
+    const timerDisplay = document.getElementById('timerDisplay');
+    const timerTime = document.querySelector('.timer-time');
+    
+    // Add notification for timer completion if not already handled
+    if (timerDisplay && timerTime) {
+        // Listen for timer completion to show notifications
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && 
+                    mutation.attributeName === 'style' && 
+                    timerDisplay.style.display === 'none') {
+                    // Timer was likely just completed or canceled
+                    if (timerTime.textContent === '00:00') {
+                        showNotification('Timer completed! Time for a short break.', 'success');
+                    }
+                }
+            });
+        });
+        
+        // Start observing the timer display for attribute changes
+        observer.observe(timerDisplay, { attributes: true });
+    }
+}
