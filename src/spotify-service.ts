@@ -504,3 +504,80 @@ async function waitForAuthCompletion(): Promise<boolean> {
         }, 5 * 60 * 1000);
     });
 }
+
+/**
+ * Get Spotify integration data for cloud sync
+ */
+export async function getSpotifyIntegrationData(context: vscode.ExtensionContext): Promise<any> {
+    try {
+        // If not connected, just return basic state
+        if (!isConnected) {
+            return {
+                connected: false
+            };
+        }
+        
+        // Get tokens from extension context
+        const token = context.globalState.get<string>(TOKEN_KEY);
+        const refreshToken = context.globalState.get<string>(REFRESH_TOKEN_KEY);
+        
+        return {
+            connected: true,
+            connectedAt: context.globalState.get('spotify-connected-at') || new Date().toISOString(),
+            // Don't include actual tokens in the sync data for security reasons
+            hasAccessToken: !!token,
+            hasRefreshToken: !!refreshToken
+        };
+    } catch (error) {
+        console.error('Error getting Spotify integration data:', error);
+        return {
+            connected: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        };
+    }
+}
+
+/**
+ * Restore Spotify integration from cloud data
+ */
+export async function restoreSpotifyIntegration(context: vscode.ExtensionContext, spotifyData: any): Promise<boolean> {
+    try {
+        if (!spotifyData || !spotifyData.connected) {
+            return false;
+        }
+        
+        // Store context for later use
+        extensionContext = context;
+        
+        // Only update connection status
+        if (spotifyData.connectedAt) {
+            await context.globalState.update('spotify-connected-at', spotifyData.connectedAt);
+        }
+        
+        // Note: we don't restore actual tokens from cloud data for security reasons
+        // Just update the connected status if tokens exist locally
+        const token = context.globalState.get<string>(TOKEN_KEY);
+        const refreshToken = context.globalState.get<string>(REFRESH_TOKEN_KEY);
+        
+        if (token && refreshToken) {
+            // Validate the token by making a test request
+            const isValid = await validateToken(token);
+            if (isValid) {
+                isConnected = true;
+                return true;
+            } else if (refreshToken) {
+                // Token is invalid but we have a refresh token, try to refresh
+                const refreshed = await refreshAccessToken(refreshToken);
+                if (refreshed) {
+                    isConnected = true;
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    } catch (error) {
+        console.error('Error restoring Spotify integration:', error);
+        return false;
+    }
+}

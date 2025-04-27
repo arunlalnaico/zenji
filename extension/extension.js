@@ -604,41 +604,8 @@ function syncDataToCloud(context) {
                     throw new Error('Failed to obtain GitHub user ID');
                 }
             }
-            // Collect user data for sync
-            const userData = {
-                timestamp: new Date().toISOString(),
-                data: {
-                    avatar: context.globalState.get('avatar'),
-                    userName: context.globalState.get('userName'),
-                    focusStats: context.globalState.get('focusStats'),
-                    journalEntries: context.globalState.get('journalEntries'),
-                    chatHistory: context.globalState.get('chatHistory'),
-                    activeTab: context.globalState.get('activeTab'),
-                    activeJournalTab: context.globalState.get('activeJournalTab'),
-                    sound: context.globalState.get('sound'),
-                    soundUrl: context.globalState.get('soundUrl'),
-                    // Add integration data
-                    integrations: {
-                        // Add Spotify integration data
-                        spotify: {
-                            connected: (0, spotify_service_1.isSpotifyConnected)(),
-                            token: context.globalState.get(spotify_constants_1.TOKEN_KEY),
-                            refreshToken: context.globalState.get(spotify_constants_1.REFRESH_TOKEN_KEY),
-                            authState: context.globalState.get(spotify_constants_1.AUTH_STATE_KEY)
-                        },
-                        // Add other integrations here as they are implemented
-                    }
-                }
-            };
-            // Ensure MongoDB is initialized before attempting to save data
-            if (!(0, mongodb_service_1.isMongoDBConnected)()) {
-                console.log('MongoDB not connected. Initializing connection...');
-                yield (0, mongodb_service_1.initMongoDB)(context);
-            }
-            // Save user data to MongoDB
-            yield (0, mongodb_service_1.saveUserDataToMongoDB)(githubUserId, userData);
-            // Update last synced timestamp
-            yield context.globalState.update('lastSyncedTimestamp', new Date().toISOString());
+            // Use the MongoDB service to sync data
+            yield (0, mongodb_service_1.syncDataToCloud)(context, githubUserId);
             // Notify the webview that sync is complete
             if (zenjiPanel) {
                 zenjiPanel.webview.postMessage({
@@ -679,76 +646,27 @@ function retrieveDataFromCloud(context) {
                     throw new Error('Failed to obtain GitHub user ID');
                 }
             }
-            // Ensure MongoDB is initialized before attempting to retrieve data
-            if (!(0, mongodb_service_1.isMongoDBConnected)()) {
-                console.log('MongoDB not connected. Initializing connection...');
-                yield (0, mongodb_service_1.initMongoDB)(context);
+            // Use the MongoDB service to retrieve data
+            yield (0, mongodb_service_1.retrieveDataFromCloud)(context, githubUserId);
+            // Notify webview about the sync completion
+            if (zenjiPanel) {
+                zenjiPanel.webview.postMessage({
+                    command: 'syncComplete',
+                    success: true
+                });
             }
-            // Retrieve data from MongoDB
-            const cloudData = yield (0, mongodb_service_1.getUserDataFromMongoDB)(githubUserId);
-            if (!cloudData) {
-                throw new Error('No data found in cloud for this user');
-            }
-            // Update local data from cloud data
-            console.log('Restoring data from cloud...');
-            if (cloudData.data) {
-                if (cloudData.data.avatar) {
-                    yield context.globalState.update('avatar', cloudData.data.avatar);
-                }
-                if (cloudData.data.userName) {
-                    yield context.globalState.update('userName', cloudData.data.userName);
-                }
-                if (cloudData.data.focusStats) {
-                    yield context.globalState.update('focusStats', cloudData.data.focusStats);
-                }
-                if (cloudData.data.journalEntries) {
-                    yield context.globalState.update('journalEntries', cloudData.data.journalEntries);
-                }
-                if (cloudData.data.chatHistory) {
-                    yield context.globalState.update('chatHistory', cloudData.data.chatHistory);
-                }
-                if (cloudData.data.activeTab) {
-                    yield context.globalState.update('activeTab', cloudData.data.activeTab);
-                }
-                if (cloudData.data.activeJournalTab) {
-                    yield context.globalState.update('activeJournalTab', cloudData.data.activeJournalTab);
-                }
-                if (cloudData.data.sound) {
-                    yield context.globalState.update('sound', cloudData.data.sound);
-                }
-                // Restore integrations if available
-                if (cloudData.data.integrations) {
-                    console.log('Restoring integration data...');
-                    // Restore Spotify integration
-                    if (cloudData.data.integrations.spotify && cloudData.data.integrations.spotify.connected) {
-                        // Store tokens in secrets storage
-                        if (cloudData.data.integrations.spotify.token) {
-                            yield context.secrets.store('spotify-token', cloudData.data.integrations.spotify.token);
-                        }
-                        if (cloudData.data.integrations.spotify.refreshToken) {
-                            yield context.secrets.store('spotify-refresh-token', cloudData.data.integrations.spotify.refreshToken);
-                        }
-                        // Store connected timestamp
-                        if (cloudData.data.integrations.spotify.connectedAt) {
-                            yield context.globalState.update('spotifyConnectedAt', cloudData.data.integrations.spotify.connectedAt);
-                        }
-                        // Notify webview about Spotify connection status
-                        if (zenjiPanel) {
-                            zenjiPanel.webview.postMessage({
-                                command: 'spotifyConnectionStatus',
-                                isConnected: true
-                            });
-                        }
-                    }
-                    // We can add more integrations here as they are implemented
-                }
-            }
-            // Update last synced timestamp
-            yield context.globalState.update('lastSyncedTimestamp', new Date().toISOString());
             return true;
         }
         catch (error) {
             console.error('Failed to retrieve data:', error);
+            // Notify the webview about the error
+            if (zenjiPanel) {
+                zenjiPanel.webview.postMessage({
+                    command: 'syncComplete',
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Unknown error occurred'
+                });
+            }
             throw error;
         }
     });
@@ -920,39 +838,6 @@ function autoSyncData(context, silentMode = true) {
                 }
             }
             return false;
-        }
-    });
-}
-/**
- * Helper function to get Spotify integration data for cloud sync
- */
-function getSpotifyIntegrationData(context) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const isConnected = (0, spotify_service_1.isSpotifyConnected)();
-            // If not connected, just return basic state
-            if (!isConnected) {
-                return {
-                    connected: false
-                };
-            }
-            // Get tokens from extension context secrets
-            const accessToken = yield context.secrets.get(spotify_constants_1.TOKEN_KEY);
-            const refreshToken = yield context.secrets.get(spotify_constants_1.REFRESH_TOKEN_KEY);
-            return {
-                connected: true,
-                connectedAt: context.globalState.get('spotify-connected-at') || new Date().toISOString(),
-                // Don't include actual tokens in the sync data for security
-                hasAccessToken: !!accessToken,
-                hasRefreshToken: !!refreshToken
-            };
-        }
-        catch (error) {
-            console.error('Error getting Spotify integration data:', error);
-            return {
-                connected: false,
-                error: error instanceof Error ? error.message : 'Unknown error'
-            };
         }
     });
 }
