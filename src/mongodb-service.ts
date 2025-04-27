@@ -186,3 +186,131 @@ export async function closeMongoDB(): Promise<void> {
         }
     }
 }
+
+/**
+ * Sync user data to MongoDB cloud storage
+ * This function handles the full sync process including integrations
+ */
+export async function syncDataToCloud(context: vscode.ExtensionContext, githubUserId: string): Promise<boolean> {
+    try {
+        // Import Spotify service functions
+        const { getSpotifyIntegrationData } = await import('./spotify-service');
+        
+        // Check if user ID is available
+        if (!githubUserId) {
+            throw new Error('GitHub user ID not available. Please authenticate with GitHub first.');
+        }
+
+        // Prepare user data for sync
+        const userData = {
+            data: {
+                avatar: context.globalState.get('avatar'),
+                userName: context.globalState.get('userName'),
+                focusStats: context.globalState.get('focusStats'),
+                journalEntries: context.globalState.get('journalEntries'),
+                chatHistory: context.globalState.get('chatHistory'),
+                activeTab: context.globalState.get('activeTab'),
+                activeJournalTab: context.globalState.get('activeJournalTab'),
+                sound: context.globalState.get('sound'),
+                soundUrl: context.globalState.get('soundUrl'),
+                
+                // Add integration data
+                integrations: {
+                    // Add Spotify integration data
+                    spotify: await getSpotifyIntegrationData(context)
+                    // Add other integrations here as they are implemented
+                }
+            }
+        };
+
+        // Ensure MongoDB is initialized
+        if (!isMongoDBConnected()) {
+            console.log('MongoDB not connected. Initializing connection...');
+            await initMongoDB(context);
+        }
+
+        // Save user data to MongoDB
+        await saveUserDataToMongoDB(githubUserId, userData);
+        
+        // Update last synced timestamp
+        await context.globalState.update('lastSyncedTimestamp', new Date().toISOString());
+        
+        return true;
+    } catch (error) {
+        console.error('Failed to sync data:', error);
+        throw error;
+    }
+}
+
+/**
+ * Retrieve and restore user data from MongoDB cloud storage
+ * This function handles the full retrieval process including integrations
+ */
+export async function retrieveDataFromCloud(context: vscode.ExtensionContext, githubUserId: string): Promise<boolean> {
+    try {
+        // Import Spotify service functions
+        const { restoreSpotifyIntegration } = await import('./spotify-service');
+        
+        // Check if user ID is available
+        if (!githubUserId) {
+            throw new Error('GitHub user ID not available. Please authenticate with GitHub first.');
+        }
+
+        // Ensure MongoDB is initialized
+        if (!isMongoDBConnected()) {
+            console.log('MongoDB not connected. Initializing connection...');
+            await initMongoDB(context);
+        }
+
+        // Get user data from MongoDB
+        const cloudData = await getUserDataFromMongoDB(githubUserId);
+        if (!cloudData || !cloudData.data) {
+            throw new Error('No data found in cloud storage.');
+        }
+
+        // Restore user data
+        if (cloudData.data.avatar) {
+            await context.globalState.update('avatar', cloudData.data.avatar);
+        }
+        if (cloudData.data.userName) {
+            await context.globalState.update('userName', cloudData.data.userName);
+        }
+        if (cloudData.data.focusStats) {
+            await context.globalState.update('focusStats', cloudData.data.focusStats);
+        }
+        if (cloudData.data.journalEntries) {
+            await context.globalState.update('journalEntries', cloudData.data.journalEntries);
+        }
+        if (cloudData.data.chatHistory) {
+            await context.globalState.update('chatHistory', cloudData.data.chatHistory);
+        }
+        if (cloudData.data.activeTab) {
+            await context.globalState.update('activeTab', cloudData.data.activeTab);
+        }
+        if (cloudData.data.activeJournalTab) {
+            await context.globalState.update('activeJournalTab', cloudData.data.activeJournalTab);
+        }
+        if (cloudData.data.sound) {
+            await context.globalState.update('sound', cloudData.data.sound);
+        }
+        
+        // Restore integrations if available
+        if (cloudData.data.integrations) {
+            console.log('Restoring integration data...');
+            
+            // Restore Spotify integration
+            if (cloudData.data.integrations.spotify) {
+                await restoreSpotifyIntegration(context, cloudData.data.integrations.spotify);
+            }
+            
+            // Add code to restore other integrations here as they are implemented
+        }
+        
+        // Update last synced timestamp
+        await context.globalState.update('lastSyncedTimestamp', new Date().toISOString());
+        return true;
+    } catch (error) {
+        console.error('Failed to retrieve data:', error);
+        throw error;
+    }
+}

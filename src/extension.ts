@@ -1,7 +1,16 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { initMongoDB, saveUserDataToMongoDB, getUserDataFromMongoDB, closeMongoDB, isMongoDBConnected } from './mongodb-service';
+import { 
+    initMongoDB, closeMongoDB, isMongoDBConnected,
+    syncDataToCloud as syncToCloud, retrieveDataFromCloud as retrieveFromCloud
+} from './mongodb-service';
 import { initOpenAI, getChatCompletionFromOpenAI, closeOpenAI, isOpenAIInitialized } from './openai-service';
+import { 
+    connectToSpotify, disconnectSpotify, isSpotifyConnected, 
+    getSpotifyPlaylists, playSpotifyPlaylist,
+    getSpotifyIntegrationData
+} from './spotify-service';
+import { TOKEN_KEY, REFRESH_TOKEN_KEY, AUTH_STATE_KEY } from './spotify-constants';
 
 let zenjiPanel: vscode.WebviewPanel | undefined;
 let statusBarItem: vscode.StatusBarItem;
@@ -186,11 +195,20 @@ async function clearAllData(context: vscode.ExtensionContext) {
     const keysToRemove = [
         'avatar', 'userName', 'focusStats', 'journalEntries',
         'chatHistory', 'sound', 'activeTab', 'activeJournalTab',
-        'githubUserId', 'lastSyncedTimestamp' 
+        'githubUserId', 'lastSyncedTimestamp',
+        // Add Spotify/integration related keys
+        'spotifyConnected', 'spotify-connected-at', AUTH_STATE_KEY
     ];
+    
+    // Clear all keys from global state
     for (const key of keysToRemove) {
         await context.globalState.update(key, undefined);
     }
+    
+    // Clear Spotify tokens from secrets storage
+    await context.secrets.delete(TOKEN_KEY);
+    await context.secrets.delete(REFRESH_TOKEN_KEY);
+    
     // Make sure to set onboardingComplete to false explicitly
     await context.globalState.update('onboardingComplete', false);
     
@@ -486,6 +504,137 @@ function createWebviewPanel(context: vscode.ExtensionContext, viewType: string, 
                         }
                     }
                     return;
+                    
+                case 'connectSpotify':
+                    vscode.window.showInformationMessage('Received Spotify connect request');
+                    try {
+                        // Call the Spotify service to connect
+                        const success = await connectToSpotify(context);
+                        
+                        if (success) {
+                            // Store connection state
+                            await context.globalState.update('spotifyConnected', true);
+                            
+                            // Send success message back to webview
+                            panel.webview.postMessage({
+                                command: 'spotifyConnectionStatus',
+                                isConnected: true
+                            });
+                            vscode.window.showInformationMessage('Sent Spotify success status to webview');
+                        } else {
+                            panel.webview.postMessage({
+                                command: 'spotifyConnectionStatus',
+                                isConnected: false,
+                                error: 'Failed to connect to Spotify'
+                            });
+                            vscode.window.showInformationMessage('Sent Spotify failure status to webview');
+                        }
+                    } catch (error) {
+                        vscode.window.showErrorMessage(`Spotify connect error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                        // Send error response back to webview
+                        panel.webview.postMessage({
+                            command: 'spotifyConnectionStatus',
+                            isConnected: false,
+                            error: error instanceof Error ? error.message : 'Unknown error occurred'
+                        });
+                    }
+                    return;
+                    
+                case 'disconnectSpotify':
+                    vscode.window.showInformationMessage('Received Spotify disconnect request');
+                    try {
+                        const success = await disconnectSpotify();
+                        
+                        if (success) {
+                            // Update state
+                            await context.globalState.update('spotifyConnected', false);
+                            
+                            // Send success message back to webview
+                            panel.webview.postMessage({
+                                command: 'spotifyConnectionStatus',
+                                isConnected: false
+                            });
+                            vscode.window.showInformationMessage('Sent Spotify disconnect success to webview');
+                        } else {
+                            panel.webview.postMessage({
+                                command: 'spotifyConnectionStatus',
+                                isConnected: true,
+                                error: 'Failed to disconnect from Spotify'
+                            });
+                            vscode.window.showInformationMessage('Sent Spotify disconnect failure to webview');
+                        }
+                    } catch (error) {
+                        vscode.window.showErrorMessage(`Spotify disconnect error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                        // Send error response back to webview
+                        panel.webview.postMessage({
+                            command: 'spotifyConnectionStatus',
+                            isConnected: true,
+                            error: error instanceof Error ? error.message : 'Unknown error occurred'
+                        });
+                    }
+                    return;
+                    
+                case 'getSpotifyPlaylists':
+                    vscode.window.showInformationMessage('Received request for Spotify playlists');
+                    try {
+                        // Call the Spotify service to get playlists
+                        const playlists = await getSpotifyPlaylists();
+                        
+                        if (playlists) {
+                            // Send playlists back to webview
+                            panel.webview.postMessage({
+                                command: 'spotifyPlaylists',
+                                playlists: playlists
+                            });
+                            vscode.window.showInformationMessage('Sent Spotify playlists to webview');
+                        } else {
+                            panel.webview.postMessage({
+                                command: 'spotifyPlaylists',
+                                playlists: [],
+                                error: 'Failed to fetch Spotify playlists'
+                            });
+                        }
+                    } catch (error) {
+                        vscode.window.showErrorMessage(`Error fetching Spotify playlists: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                        panel.webview.postMessage({
+                            command: 'spotifyPlaylists',
+                            playlists: [],
+                            error: error instanceof Error ? error.message : 'Unknown error occurred'
+                        });
+                    }
+                    return;
+                    
+                case 'playSpotifyPlaylist':
+                    if (message.playlistId) {
+                        vscode.window.showInformationMessage(`Received request to play Spotify playlist: ${message.playlistId}`);
+                        try {
+                            // Call the Spotify service to play the playlist
+                            const success = await playSpotifyPlaylist(message.playlistId);
+                            
+                            if (success) {
+                                // Send success message back to webview
+                                panel.webview.postMessage({
+                                    command: 'spotifyPlaybackStatus',
+                                    success: true,
+                                    playlistId: message.playlistId
+                                });
+                            } else {
+                                panel.webview.postMessage({
+                                    command: 'spotifyPlaybackStatus',
+                                    success: false,
+                                    error: 'Failed to play Spotify playlist'
+                                });
+                            }
+                        } catch (error) {
+                            vscode.window.showErrorMessage(`Error playing Spotify playlist: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                            panel.webview.postMessage({
+                                command: 'spotifyPlaybackStatus',
+                                success: false,
+                                error: error instanceof Error ? error.message : 'Unknown error occurred'
+                            });
+                        }
+                    }
+                    return;
             }
         },
         undefined,
@@ -514,33 +663,8 @@ async function syncDataToCloud(context: vscode.ExtensionContext) {
             }
         }
         
-        // Collect user data for sync
-        const userData = {
-            timestamp: new Date().toISOString(),
-            data: {
-            avatar: context.globalState.get('avatar'),
-            userName: context.globalState.get('userName'),
-            focusStats: context.globalState.get('focusStats'),
-            journalEntries: context.globalState.get('journalEntries'),
-            chatHistory: context.globalState.get('chatHistory'),
-            activeTab: context.globalState.get('activeTab'),
-            activeJournalTab: context.globalState.get('activeJournalTab'),
-            sound: context.globalState.get('sound'),
-            soundUrl: context.globalState.get('soundUrl') // Added sound URL
-            }
-        };
-
-        // Ensure MongoDB is initialized before attempting to save data
-        if (!isMongoDBConnected()) {
-            console.log('MongoDB not connected. Initializing connection...');
-            await initMongoDB(context);
-        }
-
-        // Save user data to MongoDB
-        await saveUserDataToMongoDB(githubUserId as string, userData);
-        
-        // Update last synced timestamp
-        await context.globalState.update('lastSyncedTimestamp', new Date().toISOString());
+        // Use the MongoDB service to sync data
+        await syncToCloud(context, githubUserId as string);
         
         // Notify the webview that sync is complete
         if (zenjiPanel) {
@@ -585,61 +709,30 @@ async function retrieveDataFromCloud(context: vscode.ExtensionContext) {
             }
         }
         
-        // Ensure MongoDB is initialized before attempting to retrieve data
-        if (!isMongoDBConnected()) {
-            console.log('MongoDB not connected. Initializing connection...');
-            await initMongoDB(context);
+        // Use the MongoDB service to retrieve data
+        await retrieveFromCloud(context, githubUserId as string);
+        
+        // Notify webview about the sync completion
+        if (zenjiPanel) {
+            zenjiPanel.webview.postMessage({
+                command: 'syncComplete',
+                success: true
+            });
         }
-        
-        // Retrieve data from MongoDB
-        const cloudData = await getUserDataFromMongoDB(githubUserId as string);
-        
-        if (!cloudData) {
-            throw new Error('No data found in cloud for this user');
-        }
-        
-        // Update local state with retrieved data
-        if (cloudData.data) {
-            // Update user data in VS Code global state
-            if (cloudData.data.avatar) {
-                await context.globalState.update('avatar', cloudData.data.avatar);
-            }
-            
-            if (cloudData.data.userName) {
-                await context.globalState.update('userName', cloudData.data.userName);
-            }
-            
-            if (cloudData.data.focusStats) {
-                await context.globalState.update('focusStats', cloudData.data.focusStats);
-            }
-            
-            if (cloudData.data.journalEntries) {
-                await context.globalState.update('journalEntries', cloudData.data.journalEntries);
-            }
-            
-            if (cloudData.data.chatHistory) {
-                await context.globalState.update('chatHistory', cloudData.data.chatHistory);
-            }
-            
-            if (cloudData.data.activeTab) {
-                await context.globalState.update('activeTab', cloudData.data.activeTab);
-            }
-            
-            if (cloudData.data.activeJournalTab) {
-                await context.globalState.update('activeJournalTab', cloudData.data.activeJournalTab);
-            }
-            
-            if (cloudData.data.sound) {
-                await context.globalState.update('sound', cloudData.data.sound);
-            }
-        }
-        
-        // Update last synced timestamp
-        await context.globalState.update('lastSyncedTimestamp', new Date().toISOString());
         
         return true;
     } catch (error) {
         console.error('Failed to retrieve data:', error);
+        
+        // Notify the webview about the error
+        if (zenjiPanel) {
+            zenjiPanel.webview.postMessage({
+                command: 'syncComplete',
+                success: false,
+                error: error instanceof Error ? error.message : 'Unknown error occurred'
+            });
+        }
+        
         throw error;
     }
 }

@@ -18,6 +18,28 @@ function sendMessage(command, data = {}) {
     });
 }
 
+// Notification function
+function showNotification(message, type = 'success') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    
+    // Add to document
+    document.body.appendChild(notification);
+    
+    // Show with fade-in animation
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 10);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
 // Main tabs functionality
 document.addEventListener('DOMContentLoaded', () => {
     // Initial load of user data
@@ -545,6 +567,175 @@ function initializeSounds() {
         noSoundsMsg.style.opacity = '0.7';
         soundsContainer.appendChild(noSoundsMsg);
     }
+    
+    // Create container for Spotify playlists
+    const spotifyContainer = document.createElement('div');
+    spotifyContainer.id = 'spotifyPlaylistsContainer';
+    spotifyContainer.classList.add('spotify-playlists-container');
+    spotifyContainer.style.marginTop = '30px';
+    spotifyContainer.style.display = 'none'; // Hide initially
+    
+    // Add header for Spotify playlists
+    const spotifyHeader = document.createElement('div');
+    spotifyHeader.classList.add('spotify-header');
+    spotifyHeader.innerHTML = `
+        <h3 style="margin-bottom: 15px; display: flex; align-items: center;">
+            <span style="margin-right: 8px;">🎧</span> Your Spotify Playlists
+        </h3>
+    `;
+    spotifyContainer.appendChild(spotifyHeader);
+    
+    // Add playlist cards container
+    const playlistsGrid = document.createElement('div');
+    playlistsGrid.classList.add('playlists-grid');
+    playlistsGrid.style.display = 'grid';
+    playlistsGrid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(150px, 1fr))';
+    playlistsGrid.style.gap = '15px';
+    spotifyContainer.appendChild(playlistsGrid);
+    
+    // Add the Spotify container after the ambient sounds
+    const soundsCard = soundsContainer.closest('.card');
+    if (soundsCard) {
+        soundsCard.appendChild(spotifyContainer);
+    }
+    
+    // Load playlists if Spotify is connected
+    if (state.integrations && state.integrations.spotify && state.integrations.spotify.connected) {
+        loadSpotifyPlaylists();
+    }
+    
+    // Function to load Spotify playlists
+    function loadSpotifyPlaylists() {
+        // Show loading message
+        playlistsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 20px;">Loading your playlists...</div>';
+        spotifyContainer.style.display = 'block';
+        
+        // Request playlists from extension
+        sendMessage('getSpotifyPlaylists');
+        
+        // Listen for playlists response
+        window.addEventListener('message', handleSpotifyPlaylists);
+    }
+    
+    // Handle Spotify playlists response
+    function handleSpotifyPlaylists(event) {
+        const message = event.data;
+        
+        if (message.command === 'spotifyPlaylists') {
+            // Remove this event listener once we've processed the playlists
+            window.removeEventListener('message', handleSpotifyPlaylists);
+            
+            if (message.error || !message.playlists || message.playlists.length === 0) {
+                // Show error or empty message
+                playlistsGrid.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 20px; color: #888;">
+                        ${message.error || 'No playlists found in your Spotify account.'}
+                    </div>
+                `;
+                return;
+            }
+            
+            // Clear loading message
+            playlistsGrid.innerHTML = '';
+            
+            // Render playlists
+            message.playlists.forEach(playlist => {
+                const playlistCard = document.createElement('div');
+                playlistCard.classList.add('playlist-card');
+                playlistCard.style.borderRadius = '8px';
+                playlistCard.style.overflow = 'hidden';
+                playlistCard.style.backgroundColor = 'var(--card-bg, #f5f5f5)';
+                playlistCard.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+                playlistCard.style.transition = 'transform 0.2s, box-shadow 0.2s';
+                playlistCard.style.cursor = 'pointer';
+                
+                // Add hover effect
+                playlistCard.addEventListener('mouseenter', () => {
+                    playlistCard.style.transform = 'translateY(-5px)';
+                    playlistCard.style.boxShadow = '0 5px 15px rgba(0,0,0,0.1)';
+                });
+                
+                playlistCard.addEventListener('mouseleave', () => {
+                    playlistCard.style.transform = 'translateY(0)';
+                    playlistCard.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+                });
+                
+                // Use the first image if available, otherwise use a placeholder
+                const imageUrl = playlist.images && playlist.images.length > 0 
+                    ? playlist.images[0].url 
+                    : 'https://community.spotify.com/t5/image/serverpage/image-id/55829iC2AD64ADB887E2A5/';
+                
+                playlistCard.innerHTML = `
+                    <div style="position: relative;">
+                        <img src="${imageUrl}" alt="${playlist.name}" style="width: 100%; aspect-ratio: 1/1; object-fit: cover;">
+                        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s;">
+                            <div style="width: 40px; height: 40px; background: #1DB954; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <span style="color: white; font-size: 18px;">▶</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="padding: 10px;">
+                        <div style="font-weight: 500; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${playlist.name}</div>
+                        <div style="font-size: 0.8em; opacity: 0.7;">${playlist.tracks.total} tracks</div>
+                    </div>
+                `;
+                
+                // Show play button on hover
+                playlistCard.querySelector('img').parentElement.addEventListener('mouseenter', () => {
+                    playlistCard.querySelector('img').parentElement.querySelector('div').style.opacity = '1';
+                });
+                
+                playlistCard.querySelector('img').parentElement.addEventListener('mouseleave', () => {
+                    playlistCard.querySelector('img').parentElement.querySelector('div').style.opacity = '0';
+                });
+                
+                // Add click handler to play the playlist
+                playlistCard.addEventListener('click', () => {
+                    // Send message to play this playlist
+                    sendMessage('playSpotifyPlaylist', { playlistId: playlist.id });
+                    
+                    // Add visual feedback
+                    const allPlaylistCards = playlistsGrid.querySelectorAll('.playlist-card');
+                    allPlaylistCards.forEach(card => card.classList.remove('playing'));
+                    playlistCard.classList.add('playing');
+                    playlistCard.style.borderColor = '#1DB954';
+                    playlistCard.style.borderWidth = '2px';
+                    playlistCard.style.borderStyle = 'solid';
+                    
+                    // Show notification
+                    showNotification(`Playing playlist: ${playlist.name}`);
+                });
+                
+                playlistsGrid.appendChild(playlistCard);
+            });
+        }
+        
+        // Handle playback status updates
+        if (message.command === 'spotifyPlaybackStatus') {
+            if (message.success) {
+                // Could update UI to show currently playing playlist
+                console.log(`Now playing playlist: ${message.playlistId}`);
+            } else {
+                // Show error
+                showNotification(`Failed to play playlist: ${message.error || 'Unknown error'}`, 'error');
+            }
+        }
+    }
+    
+    // Listen for Spotify connection status changes to show/hide playlist section
+    window.addEventListener('message', event => {
+        const message = event.data;
+        
+        if (message.command === 'spotifyConnectionStatus') {
+            if (message.isConnected) {
+                // When Spotify is connected, load playlists
+                loadSpotifyPlaylists();
+            } else {
+                // When Spotify is disconnected, hide playlist section
+                spotifyContainer.style.display = 'none';
+            }
+        }
+    });
 }
 
 // Initialize Journal
@@ -879,7 +1070,23 @@ function initializeModals() {
                 state.integrations = {};
             }
             
-            // For demo purposes, just toggle the connection status
+            // For Spotify, handle differently since we use the VS Code extension
+            if (service === 'spotify') {
+                // If already connected, send disconnect command
+                if (state.integrations[service] && state.integrations[service].connected) {
+                    sendMessage('disconnectSpotify');
+                    // UI will be updated when we get the response from extension
+                } else {
+                    // Send connect command to extension
+                    sendMessage('connectSpotify');
+                    // Temporarily update button to indicate processing
+                    button.textContent = 'Connecting...';
+                    button.disabled = true;
+                }
+                return;
+            }
+            
+            // For other services, just toggle the connection status locally
             if (state.integrations[service]) {
                 // If already connected, disconnect
                 delete state.integrations[service];
@@ -901,15 +1108,69 @@ function initializeModals() {
                 // Update UI to show connected state
                 const card = button.closest('.integration-card');
                 card.classList.add('connected');
-                
-                // For Spotify specifically, we'll send a command to the extension
-                if (service === 'spotify') {
-                    sendMessage('connectSpotify');
-                }
             }
             
             saveState(state);
         });
+    });
+    
+    // Listen for Spotify connection status updates from extension
+    window.addEventListener('message', event => {
+        const message = event.data;
+        
+        if (message.command === 'spotifyConnectionStatus') {
+            const state = loadState();
+            if (!state.integrations) {
+                state.integrations = {};
+            }
+            
+            const spotifyButton = document.querySelector('.integration-connect-btn[data-service="spotify"]');
+            const spotifyCard = spotifyButton?.closest('.integration-card');
+            
+            if (spotifyButton) {
+                // Re-enable button
+                spotifyButton.disabled = false;
+                
+                if (message.isConnected) {
+                    // Update button to show connected state
+                    spotifyButton.textContent = 'Disconnect';
+                    spotifyButton.classList.add('btn-secondary');
+                    
+                    // Update card to show connected state
+                    if (spotifyCard) {
+                        spotifyCard.classList.add('connected');
+                    }
+                    
+                    // Update state
+                    state.integrations.spotify = {
+                        connected: true,
+                        connectedAt: new Date().toISOString()
+                    };
+                    
+                    // Show success notification
+                    showNotification('Successfully connected to Spotify');
+                } else {
+                    // Update button to show disconnected state
+                    spotifyButton.textContent = 'Connect';
+                    spotifyButton.classList.remove('btn-secondary');
+                    
+                    // Update card to show disconnected state
+                    if (spotifyCard) {
+                        spotifyCard.classList.remove('connected');
+                    }
+                    
+                    // Update state
+                    delete state.integrations.spotify;
+                    
+                    // Show error notification if there was an error
+                    if (message.error) {
+                        showNotification(`Failed to connect to Spotify: ${message.error}`, 'error');
+                    }
+                }
+                
+                saveState(state);
+            }
+        }
     });
 }
 
