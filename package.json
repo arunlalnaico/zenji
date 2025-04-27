@@ -46,7 +46,7 @@
         "package": "vsce package",
         "clean": "node -e \"if(require('fs').existsSync('./out')){require('fs').rmSync('./out',{recursive:true,force:true})}\"",
         "build": "npm run clean && npm run compile && npm run package",
-        "uninstall-extension": "code --uninstall-extension arunlals89.zenjispace",
+        "uninstall-extension": "code --uninstall-extension arunlal.zenjispace",
         "installpkg": "code --install-extension zenjispace-1.2.3.vsix",
         "restart-vscode": "code --reloadWindow",
         "reload-extensions": "code --command workbench.action.developer.reloadWindow",
