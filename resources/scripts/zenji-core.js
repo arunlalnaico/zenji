@@ -440,7 +440,8 @@ function initializeSounds() {
     
     // Sound data with public URLs instead of local files
     const sounds = [
-        { id: 'rain', name: 'Rain', description: 'Gentle rainfall', url: `https://cdn.pixabay.com/download/audio/2024/10/30/audio_42e6870f29.mp3?filename=calming-rain-257596.mp3`, icon: '🌧️' },
+        { id: 'rain', name: 'Rain', description: 'Gentle rainfall', url: `https://s3.eu-central-1.wasabisys.com/audio.com.audio/transcoding/28/63/1830108825666328-1830108825771437-1830108828638497.mp3?X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=W7IA3NSYSOQIKLY9DEVC%2F20250426%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250426T074030Z&X-Amz-SignedHeaders=host&X-Amz-Expires=518400&X-Amz-Signature=a011b9854a26179b0d66e51a643459029d6333ea7618cc2c7797954dc28e19d1`, icon: '🌧️' },
+        // { id: 'rain', name: 'Rain', description: 'Gentle rainfall', url: `https://cdn.pixabay.com/download/audio/2024/10/30/audio_42e6870f29.mp3?filename=calming-rain-257596.mp3`, icon: '🌧️' },
         { id: 'forest', name: 'Forest', description: 'Birds and trees', url: `https://cdn.pixabay.com/download/audio/2025/02/03/audio_7599bcb342.mp3?filename=forest-ambience-296528.mp3`, icon: '🌲' },
         { id: 'waves', name: 'Ocean Waves', description: 'Calming sea sounds', url: `https://cdn.pixabay.com/download/audio/2025/03/14/audio_75bef6c8dd.mp3?filename=sounds-of-waves-313367.mp3`, icon: '🌊' },
         { id: 'cafe', name: 'Café', description: 'Coffee shop ambience', url: `https://cdn.pixabay.com/download/audio/2021/10/10/audio_1009cd220b.mp3?filename=cafe-ambience-9263.mp3`, icon: '☕' },
@@ -458,6 +459,15 @@ function initializeSounds() {
     const state = loadState();
     let activeSound = state.sound ? state.sound.id || state.sound : null;
     let activeSoundObj = null;
+    
+    // Set default volume if not already set
+    if (!state.soundVolume) {
+        state.soundVolume = 0.7; // 70% volume as default
+        saveState(state);
+    }
+    
+    // Apply volume setting to audio player
+    audioPlayer.volume = state.soundVolume;
     
     // If the active sound is no longer in our available sounds list, reset it
     if (activeSound && !sounds.some(sound => sound.id === activeSound)) {
@@ -483,9 +493,21 @@ function initializeSounds() {
             <div class="sound-icon">${sound.icon}</div>
             <div class="sound-name">${sound.name}</div>
             <div class="sound-description">${sound.description}</div>
+            <div class="volume-control">
+                <span class="volume-icon">🔈</span>
+                <input type="range" class="volume-slider" min="0" max="1" step="0.01" value="${state.soundVolume}">
+                <span class="volume-icon">🔊</span>
+            </div>
         `;
         
-        soundCard.addEventListener('click', () => {
+        // Add click handler for sound card
+        soundCard.addEventListener('click', (event) => {
+            // If clicking on the volume slider, don't toggle sound
+            if (event.target.classList.contains('volume-slider')) {
+                event.stopPropagation();
+                return;
+            }
+            
             const allSoundCards = document.querySelectorAll('.sound-card');
             
             if (activeSound === sound.id) {
@@ -548,6 +570,33 @@ function initializeSounds() {
             sendMessage('updateSound', { sound: state.sound });
         });
         
+        // Add volume slider handler to each card
+        const volumeSlider = soundCard.querySelector('.volume-slider');
+        if (volumeSlider) {
+            volumeSlider.addEventListener('input', (event) => {
+                // Prevent the sound card click event
+                event.stopPropagation();
+                
+                // Update audio player volume
+                const volume = parseFloat(event.target.value);
+                audioPlayer.volume = volume;
+                
+                // Save volume setting to state
+                const volumeState = loadState();
+                volumeState.soundVolume = volume;
+                saveState(volumeState);
+                
+                // Update all other sound cards' volume sliders
+                document.querySelectorAll('.volume-slider').forEach(slider => {
+                    if (slider !== event.target) {
+                        slider.value = volume;
+                    }
+                });
+                
+                // Visual notification removed as requested
+            });
+        }
+        
         soundsContainer.appendChild(soundCard);
     });
     
@@ -566,6 +615,13 @@ function initializeSounds() {
         noSoundsMsg.style.padding = '20px';
         noSoundsMsg.style.opacity = '0.7';
         soundsContainer.appendChild(noSoundsMsg);
+    }
+    
+    // Add shortcut to volume control from integration logo
+    const integrationsButton = document.getElementById('integrationsButton');
+    if (integrationsButton) {
+        integrationsButton.textContent = '🔊';
+        integrationsButton.title = 'Sound Settings & Integrations';
     }
 }
 
@@ -1228,6 +1284,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Update sound integration button states
     updateSoundIntegrationButtons();
+    
+    // Initialize development integrations
+    initializeDevelopmentIntegrations();
 });
 
 // Initialize focus timer
@@ -1259,4 +1318,44 @@ function initializeFocusTimer() {
         // Start observing the timer display for attribute changes
         observer.observe(timerDisplay, { attributes: true });
     }
+}
+
+// Initialize Development Integrations
+function initializeDevelopmentIntegrations() {
+    // Get reference to development tab integration container
+    const devIntegrationsContainer = document.querySelector('#development-tab .integrations-container');
+    if (!devIntegrationsContainer) return;
+    
+    // Get current integration state
+    const state = loadState();
+    if (!state.integrations) {
+        state.integrations = {};
+    }
+    
+    // Update button states based on stored integrations
+    const connectButtons = devIntegrationsContainer.querySelectorAll('.integration-connect-btn');
+    connectButtons.forEach(button => {
+        const service = button.dataset.service;
+        if (service && state.integrations[service] && state.integrations[service].connected) {
+            // Update button to show connected state
+            button.textContent = 'Disconnect';
+            button.classList.add('btn-secondary');
+            
+            // Update card to show connected state
+            const card = button.closest('.integration-card');
+            if (card) {
+                card.classList.add('connected');
+                
+                // Add connected status badge if not present
+                const nameElement = card.querySelector('.integration-name');
+                if (nameElement && !nameElement.querySelector('.integration-status')) {
+                    const serviceName = nameElement.textContent.trim();
+                    nameElement.innerHTML = `${serviceName} <span class="integration-status connected">Connected</span>`;
+                }
+            }
+        }
+    });
+    
+    // Attach click handlers to connect buttons
+    attachIntegrationButtonListeners();
 }

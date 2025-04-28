@@ -277,6 +277,70 @@
     opacity: 0.7;
 }
 
+/* Sound Volume Control */
+.volume-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 10px;
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
+    transition: opacity 0.3s, height 0.3s;
+}
+
+.sound-card.active .volume-control {
+    opacity: 1;
+    height: 25px;
+    margin-top: 10px;
+}
+
+.volume-slider {
+    -webkit-appearance: none;
+    width: 80%;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(106, 115, 193, 0.2);
+    outline: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.volume-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.volume-slider::-moz-range-thumb:hover {
+    transform: scale(1.2);
+}
+
+.volume-icon {
+    font-size: 1em;
+    margin: 0 5px;
+    color: var(--primary-color);
+    opacity: 0.7;
+}
+
 /* Sound Integrations */
 .integrations-container {
     display: grid;
